@@ -1,10 +1,10 @@
 import tensorflow as tf
 from keras.api.models import Sequential
 from keras.api.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense, Dropout
-from utils.load_datasets import load_face_dataset
 from keras.api.utils import image_dataset_from_directory
 from keras.api.layers import Rescaling
 import os
+from utils.emotions import EMOTIONS, NUM_CLASSES
 
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
@@ -41,7 +41,8 @@ class FaceModel:
         self.model.fit(train, epochs=epochs, validation_data=validation)
 
         if saving:
-            self.model.save("models/face.keras")
+            print(f"Saving the model ...")
+            self.model.save("models/face/face-emotion.keras")
 
 def load_face_dataset(input_shape):
 
@@ -80,4 +81,10 @@ def load_face_dataset(input_shape):
 
     return train_dataset, val_dataset
 
-model = FaceModel(num_classes=7, input_shape=(48,48,3))
+# TRAINING
+
+face_model = FaceModel(num_classes=NUM_CLASSES, input_shape=(48,48,1))
+face_model.train_face_model()
+
+#for reload model
+#model = keras.saving.load_model("final_model.keras")
