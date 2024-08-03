@@ -1,10 +1,9 @@
-import tensorflow as tf
-from keras.api.models import Sequential
-from keras.api.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense, Dropout, RandomFlip, RandomRotation, RandomZoom
-from keras.api.utils import image_dataset_from_directory
-from keras.api.layers import Rescaling
 import os
-from utils.emotions import EMOTIONS, NUM_CLASSES
+from keras.api.models import Sequential
+from keras.api.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from keras.api.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
+from utils.emotions import EMOTIONS, NUM_CLASSES, FER_EMOTION_SHAPE
+from utils.utils import prepocess_face_dataset
 
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
@@ -12,9 +11,9 @@ class FaceModel:
     def __init__(self, num_classes, input_shape):
         self.num_classes = num_classes
         self.input_shape = input_shape
-        self.model = self._create_face_model()
+        self.model = self._create_model()
 
-    def _create_face_model(self):
+    def _create_model(self):
         model = Sequential([
             Input(shape=self.input_shape),
             Conv2D(64, kernel_size=(3, 3), activation='relu'),
@@ -35,58 +34,19 @@ class FaceModel:
 
         return model
 
-    def train_face_model(self, batch_size=64, epochs=50, saving=True):
+    def train_face_model(self, batch_size=32, epochs=50, patience=50, verbose=1):
         
         train, validation = prepocess_face_dataset(self.input_shape)
-        self.model.fit(train, epochs=epochs, validation_data=validation)
+        
+        # add callbacks
+        early_stop = EarlyStopping('val_loss', patience=50)
+        reduce_lr = ReduceLROnPlateau('val_loss', factor=0.1, patience=int(patience/4), verbose=verbose) # Reduce learning rate when a metric has stopped improving
+        trained_models_path = 'models/face/' + '_cnn'
+        model_names = trained_models_path + '.{epoch:02d}-{val_acc:.2f}.hdf5'
+        model_checkpoint = ModelCheckpoint(model_names, 'val_loss', verbose=1,save_best_only=True)
+        callbacks = [model_checkpoint, early_stop, reduce_lr]
 
-        if saving:
-            print(f"Saving the model ...")
-            self.model.save("models/face/face-emotion.keras")
-
-def prepocess_face_dataset(input_shape):
-
-    train_dir = os.path.join('data\face\fer-2013\train')
-    test_dir = os.path.join('data\face\fer-2013\test')
-
-    train_dataset = image_dataset_from_directory(
-            directory=train_dir,
-            label_mode='categorical',
-            subset='training',
-            seed=123,
-            image_size=input_shape[:2],
-            color_mode='grayscale',
-            batch_size=64
-        )
-    
-    val_dataset = image_dataset_from_directory(
-        directory=test_dir,
-        label_mode='categorical',
-        subset='validation',
-        seed=123,
-        image_size=input_shape[:2],
-        color_mode='grayscale',
-        batch_size=64
-    )
-
-    data_augmentation = Sequential([
-        RandomFlip("horizontal"),
-        RandomRotation(0.1),
-        RandomZoom(0.1)
-    ])
-
-    # Add Rescaling layer to normalize pixel values
-    normalization_layer = Rescaling(1./255)
-    
-    train_dataset = train_dataset.map(lambda x, y: (normalization_layer(data_augmentation(x, training=True)), y))
-    #train_dataset = train_dataset.map(lambda x, y: (data_augmentation(x, training=True), y))
-    val_dataset = val_dataset.map(lambda x, y: (normalization_layer(x), y))
-
-    # Prefetch the datasets for better performance
-    train_dataset = train_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
-    val_dataset = val_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
-
-    return train_dataset, val_dataset
+        self.model.fit(train, batch_size=batch_size, epochs=epochs, validation_data=validation, callbacks=callbacks)
 
 
 # TRAINING
@@ -94,5 +54,5 @@ def prepocess_face_dataset(input_shape):
 face_model = FaceModel(num_classes=NUM_CLASSES, input_shape=(48,48,1))
 face_model.train_face_model()
 
-#for reload model
-#model = keras.saving.load_model("final_model.keras")
+# The model weights (that are considered the best) can be loaded as -
+# model.load_weights(checkpoint_filepath)
