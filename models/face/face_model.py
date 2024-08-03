@@ -1,6 +1,6 @@
 import tensorflow as tf
 from keras.api.models import Sequential
-from keras.api.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from keras.api.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense, Dropout, RandomFlip, RandomRotation, RandomZoom
 from keras.api.utils import image_dataset_from_directory
 from keras.api.layers import Rescaling
 import os
@@ -37,14 +37,14 @@ class FaceModel:
 
     def train_face_model(self, batch_size=64, epochs=50, saving=True):
         
-        train, validation = load_face_dataset(self.input_shape)
+        train, validation = prepocess_face_dataset(self.input_shape)
         self.model.fit(train, epochs=epochs, validation_data=validation)
 
         if saving:
             print(f"Saving the model ...")
             self.model.save("models/face/face-emotion.keras")
 
-def load_face_dataset(input_shape):
+def prepocess_face_dataset(input_shape):
 
     train_dir = os.path.join('data\face\fer-2013\train')
     test_dir = os.path.join('data\face\fer-2013\test')
@@ -69,10 +69,17 @@ def load_face_dataset(input_shape):
         batch_size=64
     )
 
+    data_augmentation = Sequential([
+        RandomFlip("horizontal"),
+        RandomRotation(0.1),
+        RandomZoom(0.1)
+    ])
+
     # Add Rescaling layer to normalize pixel values
     normalization_layer = Rescaling(1./255)
     
-    train_dataset = train_dataset.map(lambda x, y: (normalization_layer(x), y))
+    train_dataset = train_dataset.map(lambda x, y: (normalization_layer(data_augmentation(x, training=True)), y))
+    #train_dataset = train_dataset.map(lambda x, y: (data_augmentation(x, training=True), y))
     val_dataset = val_dataset.map(lambda x, y: (normalization_layer(x), y))
 
     # Prefetch the datasets for better performance
@@ -80,6 +87,7 @@ def load_face_dataset(input_shape):
     val_dataset = val_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
     return train_dataset, val_dataset
+
 
 # TRAINING
 
