@@ -75,7 +75,7 @@ class ModelMiniXception:
 
         return model
 
-    def train_face_model(self, batch_size=32, epochs=100, patience=50, verbose = 1, saving=True):
+    def train_face_model(self, batch_size=32, epochs=100, patience=50, verbose=1):
             
             train, validation = prepocess_face_dataset(self.input_shape)
 
