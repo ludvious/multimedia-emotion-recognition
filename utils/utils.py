@@ -1,8 +1,16 @@
-import os
 import tensorflow as tf
+import pandas as pd
+import cv2, os, librosa
+import numpy as np
 from keras.api.utils import image_dataset_from_directory
 from keras.api.models import Sequential
 from keras.api.layers import RandomFlip, RandomRotation, RandomZoom, Rescaling
+
+class DataLoader:
+    @staticmethod
+    def load_fer2013_data(data_dir):
+        data = pd.read_csv(os.path.join(data_dir, 'fer2013.csv'))
+        return data
 
 def prepocess_face_dataset(input_shape):
 
@@ -47,3 +55,23 @@ def prepocess_face_dataset(input_shape):
     val_dataset = val_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
     return train_dataset, val_dataset
+
+
+def capture_frames_from_webcam():
+    cap = cv2.VideoCapture(0)
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        yield frame
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    cap.release()
+    cv2.destroyAllWindows()
+
+
+def extract_spectrogram(file_path):
+        y, sr = librosa.load(file_path)
+        spect = librosa.feature.melspectrogram(y=y, sr=sr)
+        spect_db = librosa.power_to_db(spect, ref=np.max)
+        return spect_db

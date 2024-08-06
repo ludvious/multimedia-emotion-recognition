@@ -2,9 +2,12 @@ import os
 from keras.api.models import Sequential
 from keras.api.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from keras.api.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
-from utils.emotions import EMOTIONS, NUM_CLASSES, FER_EMOTION_SHAPE
+from utils.emotions import EMOTIONS, NUM_CLASSES
 from utils.utils import prepocess_face_dataset
 import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+from sklearn.metrics import confusion_matrix, classification_report
 
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
@@ -50,6 +53,38 @@ class CNNFaceModel:
         callbacks = [model_checkpoint, early_stop, reduce_lr]
 
         self.model.fit(train, batch_size=batch_size, epochs=epochs, validation_data=validation, callbacks=callbacks)
+    
+    def plot_training_history(self):
+        history = face_model.history
+        plt.figure(figsize=(10, 5))
+        plt.plot(history['acc'], label='Train Accuracy')
+        plt.plot(history['val_acc'], label='Validation Accuracy')
+        plt.title('Training and Validation Accuracy')
+        plt.xlabel('Epochs')
+        plt.ylabel('Accuracy')
+        plt.legend()
+        plt.show()
+
+        plt.figure(figsize=(10, 5))
+        plt.plot(history['loss'], label='Train Loss')
+        plt.plot(history['val_loss'], label='Validation Loss')
+        plt.title('Training and Validation Loss')
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.legend()
+        plt.show()
+    
+    def plot_confusion_matrix(self):
+        Y_pred = self.model.predict(self.validation_generator)
+        y_pred = np.argmax(Y_pred, axis=1)
+        y_true = self.validation_generator.classes
+        cm = confusion_matrix(y_true, y_pred)
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=self.validation_generator.class_indices, yticklabels=self.validation_generator.class_indices)
+        plt.xlabel('Predicted')
+        plt.ylabel('True')
+        plt.title('Confusion Matrix')
+        plt.show()
+        print(classification_report(y_true, y_pred, target_names=self.validation_generator.class_indices.keys()))
 
 
 # TRAINING
@@ -57,24 +92,6 @@ class CNNFaceModel:
 face_model = CNNFaceModel(num_classes=NUM_CLASSES, input_shape=(48,48,1))
 face_model.train_face_model(batch_size=64, epochs=50)
 
-'''history = face_model.history
-plt.figure(figsize=(10, 5))
-plt.plot(history['acc'], label='Train Accuracy')
-plt.plot(history['val_acc'], label='Validation Accuracy')
-plt.title('Training and Validation Accuracy')
-plt.xlabel('Epochs')
-plt.ylabel('Accuracy')
-plt.legend()
-plt.show()
-
-plt.figure(figsize=(10, 5))
-plt.plot(history['loss'], label='Train Loss')
-plt.plot(history['val_loss'], label='Validation Loss')
-plt.title('Training and Validation Loss')
-plt.xlabel('Epochs')
-plt.ylabel('Loss')
-plt.legend()
-plt.show()'''
 
 # The model weights (that are considered the best) can be loaded as -
 # model.load_weights(checkpoint_filepath)
