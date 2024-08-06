@@ -4,6 +4,7 @@ from keras.api.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense, Dropou
 from keras.api.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from utils.emotions import EMOTIONS, NUM_CLASSES, FER_EMOTION_SHAPE
 from utils.utils import prepocess_face_dataset
+import matplotlib.pyplot as plt
 
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
@@ -54,7 +55,26 @@ class CNNFaceModel:
 # TRAINING
 
 face_model = CNNFaceModel(num_classes=NUM_CLASSES, input_shape=(48,48,1))
-face_model.train_face_model(batch_size=32, epochs=50)
+face_model.train_face_model(batch_size=64, epochs=50)
+
+'''history = face_model.history
+plt.figure(figsize=(10, 5))
+plt.plot(history['acc'], label='Train Accuracy')
+plt.plot(history['val_acc'], label='Validation Accuracy')
+plt.title('Training and Validation Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.show()
+
+plt.figure(figsize=(10, 5))
+plt.plot(history['loss'], label='Train Loss')
+plt.plot(history['val_loss'], label='Validation Loss')
+plt.title('Training and Validation Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+plt.show()'''
 
 # The model weights (that are considered the best) can be loaded as -
 # model.load_weights(checkpoint_filepath)
