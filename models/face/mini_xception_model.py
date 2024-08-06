@@ -75,7 +75,7 @@ class ModelMiniXception:
 
         return model
 
-    def train_face_model(self, batch_size=32, epochs=100, patience=50, verbose=1):
+    def train_face_model(self, batch_size: int, epochs: int, patience=50, verbose=1):
             
             train, validation = prepocess_face_dataset(self.input_shape)
 
@@ -90,7 +90,7 @@ class ModelMiniXception:
             self.model.fit(train, batch_size=batch_size, epochs=epochs, validation_data=validation, callbacks=callbacks)
 
 face_model = ModelMiniXception(num_classes=NUM_CLASSES, input_shape=(48,48,1))
-face_model.train_face_model()
+face_model.train_face_model(batch_size=32, epochs=100)
 
 # The model weights (that are considered the best) can be loaded as -
 # model.load_weights(checkpoint_filepath)

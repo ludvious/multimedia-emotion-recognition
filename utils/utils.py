@@ -1,6 +1,8 @@
 import os
+import tensorflow as tf
 from keras.api.utils import image_dataset_from_directory
-from keras.api.layers import RandomFlip, RandomRotation, RandomZoom
+from keras.api.models import Sequential
+from keras.api.layers import RandomFlip, RandomRotation, RandomZoom, Rescaling
 
 def prepocess_face_dataset(input_shape):
 

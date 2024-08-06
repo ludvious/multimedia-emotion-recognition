@@ -7,7 +7,7 @@ from utils.utils import prepocess_face_dataset
 
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
-class FaceModel:
+class CNNFaceModel:
     def __init__(self, num_classes, input_shape):
         self.num_classes = num_classes
         self.input_shape = input_shape
@@ -36,7 +36,7 @@ class FaceModel:
 
         return model
 
-    def train_face_model(self, batch_size=32, epochs=50, patience=50, verbose=1):
+    def train_face_model(self, batch_size: int, epochs: int, patience=50, verbose=1):
         
         train, validation = prepocess_face_dataset(self.input_shape)
         
@@ -53,8 +53,8 @@ class FaceModel:
 
 # TRAINING
 
-face_model = FaceModel(num_classes=NUM_CLASSES, input_shape=(48,48,1))
-face_model.train_face_model()
+face_model = CNNFaceModel(num_classes=NUM_CLASSES, input_shape=(48,48,1))
+face_model.train_face_model(batch_size=32, epochs=50)
 
 # The model weights (that are considered the best) can be loaded as -
 # model.load_weights(checkpoint_filepath)
