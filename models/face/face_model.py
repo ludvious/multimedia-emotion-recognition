@@ -14,19 +14,21 @@ class FaceModel:
         self.model = self._create_model()
 
     def _create_model(self):
-        model = Sequential([
-            Input(shape=self.input_shape),
-            Conv2D(64, kernel_size=(3, 3), activation='relu'),
-            MaxPooling2D(pool_size=(2, 2)),
-            Conv2D(128, kernel_size=(3, 3), activation='relu'),
-            MaxPooling2D(pool_size=(2, 2)),
-            Conv2D(256, kernel_size=(3, 3), activation='relu'),
-            MaxPooling2D(pool_size=(2, 2)),
-            Flatten(),
-            Dense(512, activation='relu'),
-            Dropout(0.5),
-            Dense(7, activation='softmax')
-        ])
+
+        model = Sequential()
+
+        model.add(Input(shape=self.input_shape))
+        model.add(Conv2D(64, kernel_size=(3, 3), activation='relu'))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(Conv2D(128, kernel_size=(3, 3), activation='relu'))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(Conv2D(256, kernel_size=(3, 3), activation='relu'))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(Flatten())
+        model.add(Dense(512, activation='relu'))
+        model.add(Dropout(0.5))
+        model.add(Dense(self.num_classes, activation='softmax'))
+        
         print(f"Creating Model ...\n")
         model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
         print(f"Model Summary : \n")
