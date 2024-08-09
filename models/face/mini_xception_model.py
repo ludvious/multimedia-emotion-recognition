@@ -94,7 +94,7 @@ class ModelMiniXception:
             # add callbacks
             early_stop = EarlyStopping('val_loss', patience=50)
             reduce_lr = ReduceLROnPlateau('val_loss', factor=0.1, patience=int(patience/4), verbose=1) # Reduce learning rate when a metric has stopped improving
-            checkpoint_models_path = 'models/face/mini_xception_'+'{epoch:02d}-{val_loss:.2f}.keras'
+            checkpoint_models_path = 'models/face/mini_xception_'+'checkpoint.model.keras'
             model_checkpoint = ModelCheckpoint(filepath=checkpoint_models_path, monitor='val_loss', verbose=verbose, save_best_only=True)
             callbacks = [model_checkpoint, early_stop, reduce_lr]
             print(f"add callbacks ...\n")
