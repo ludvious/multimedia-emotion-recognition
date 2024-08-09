@@ -24,44 +24,44 @@ class ModelMiniXception:
 
         # base
         model.add(Input(shape=self.input_shape))
-        model.add(Conv2D(8, (3, 3), strides=(1, 1), kernel_regularizer=regularization, use_bias=False, input_shape=self.input_shape))
+        model.add(Conv2D(8, (3, 3), strides=(1, 1), activity_regularizer=regularization, use_bias=False, input_shape=self.input_shape))
         model.add(BatchNormalization())
         model.add(Activation('relu'))
-        model.add(Conv2D(8, (3, 3), strides=(1, 1), kernel_regularizer=regularization, use_bias=False))
+        model.add(Conv2D(8, (3, 3), strides=(1, 1), activity_regularizer=regularization, use_bias=False))
         model.add(BatchNormalization())
         model.add(Activation('relu'))
 
         # x4 module
 
         #1
-        model.add(SeparableConv2D(16, (3, 3), padding='same', kernel_regularizer=regularization, use_bias=False))
+        model.add(SeparableConv2D(16, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False))
         model.add(BatchNormalization())
         model.add(Activation('relu'))
-        model.add(SeparableConv2D(16, (3, 3), padding='same', kernel_regularizer=regularization, use_bias=False))
+        model.add(SeparableConv2D(16, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False))
         model.add(BatchNormalization())
         model.add(MaxPooling2D((3, 3), strides=(2, 2), padding='same'))
 
         #2
-        model.add(SeparableConv2D(32, (3, 3), padding='same', kernel_regularizer=regularization, use_bias=False))
+        model.add(SeparableConv2D(32, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False))
         model.add(BatchNormalization())
         model.add(Activation('relu'))
-        model.add(SeparableConv2D(32, (3, 3), padding='same', kernel_regularizer=regularization, use_bias=False))
+        model.add(SeparableConv2D(32, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False))
         model.add(BatchNormalization())
         model.add(MaxPooling2D((3, 3), strides=(2, 2), padding='same'))
 
         #3
-        model.add(SeparableConv2D(64, (3, 3), padding='same', kernel_regularizer=regularization, use_bias=False))
+        model.add(SeparableConv2D(64, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False))
         model.add(BatchNormalization())
         model.add(Activation('relu'))
-        model.add(SeparableConv2D(64, (3, 3), padding='same', kernel_regularizer=regularization, use_bias=False))
+        model.add(SeparableConv2D(64, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False))
         model.add(BatchNormalization())
         model.add(MaxPooling2D((3, 3), strides=(2, 2), padding='same'))
 
         #4
-        model.add(SeparableConv2D(128, (3, 3), padding='same', kernel_regularizer=regularization, use_bias=False))
+        model.add(SeparableConv2D(128, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False))
         model.add(BatchNormalization())
         model.add(Activation('relu'))
-        model.add(SeparableConv2D(128, (3, 3), padding='same', kernel_regularizer=regularization, use_bias=False))
+        model.add(SeparableConv2D(128, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False))
         model.add(BatchNormalization())
         model.add(MaxPooling2D((3, 3), strides=(2, 2), padding='same'))
 
