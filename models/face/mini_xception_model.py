@@ -5,6 +5,7 @@ from keras.api.regularizers import l2
 from keras.api.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from utils.emotions import EMOTIONS, NUM_CLASSES
 from utils.utils import prepocess_face_dataset
+import matplotlib.pyplot as plt
 
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
@@ -76,7 +77,7 @@ class ModelMiniXception:
 
         return model
 
-    def train_face_model(self, epochs=100, patience=50, verbose = 1, saving=True):
+    def train_face_model(self, epochs=100, patience=50, verbose = 1):
             
             print(f"Loading and preprocess the data ...\n")
             train, validation = prepocess_face_dataset(self.input_shape, self.batch_size)
@@ -93,7 +94,27 @@ class ModelMiniXception:
             print(f"Start training ... \n")
             self.model.fit(train, batch_size=self.batch_size, epochs=epochs, validation_data=validation, callbacks=callbacks)
 
-face_model = ModelMiniXception(num_classes=NUM_CLASSES, input_shape=(48,48,1))
+    def plot_training_history(self):
+        history = self.model.history
+        plt.figure(figsize=(10, 5))
+        plt.plot(history['acc'], label='Train Accuracy')
+        plt.plot(history['val_acc'], label='Validation Accuracy')
+        plt.title('Training and Validation Accuracy')
+        plt.xlabel('Epochs')
+        plt.ylabel('Accuracy')
+        plt.legend()
+        plt.show()
+
+        plt.figure(figsize=(10, 5))
+        plt.plot(history['loss'], label='Train Loss')
+        plt.plot(history['val_loss'], label='Validation Loss')
+        plt.title('Training and Validation Loss')
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.legend()
+        plt.show()        
+
+face_model = ModelMiniXception(num_classes=NUM_CLASSES, input_shape=(48,48,1), batch_size=32)
 face_model.train_face_model()
 
 # The model weights (that are considered the best) can be loaded as -

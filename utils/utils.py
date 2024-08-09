@@ -56,7 +56,6 @@ def preprocess_data_images(dataset, type_dataset: str, batch_size: int, augment=
     normalization_layer = Rescaling(1./255)
     dataset = dataset.map(lambda x, y: (normalization_layer(x), y))
 
-
     if augment:
         # applicazione aumento dei dati
         data_augmentation = Sequential([

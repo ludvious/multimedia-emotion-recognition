@@ -5,8 +5,6 @@ from keras.api.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlatea
 from utils.emotions import EMOTIONS, NUM_CLASSES
 from utils.utils import prepocess_face_dataset
 import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
 from sklearn.metrics import confusion_matrix, classification_report
 
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
@@ -59,7 +57,7 @@ class CNNFaceModel:
         self.model.fit(train, batch_size=self.batch_size, epochs=epochs, validation_data=validation, callbacks=callbacks)
     
     def plot_training_history(self):
-        history = face_model.history
+        history = self.model.history
         plt.figure(figsize=(10, 5))
         plt.plot(history['acc'], label='Train Accuracy')
         plt.plot(history['val_acc'], label='Validation Accuracy')
@@ -78,7 +76,7 @@ class CNNFaceModel:
         plt.legend()
         plt.show()
     
-    def plot_confusion_matrix(self):
+    '''def predict_and_confusion_matrix(self):
         Y_pred = self.model.predict(self.validation_generator)
         y_pred = np.argmax(Y_pred, axis=1)
         y_true = self.validation_generator.classes
@@ -89,12 +87,12 @@ class CNNFaceModel:
         plt.title('Confusion Matrix')
         plt.show()
         print(classification_report(y_true, y_pred, target_names=self.validation_generator.class_indices.keys()))
-
+'''
 
 # TRAINING
 
-face_model = CNNFaceModel(num_classes=NUM_CLASSES, input_shape=(48,48,1))
-face_model.train_face_model(batch_size=64, epochs=50)
+face_model = CNNFaceModel(num_classes=NUM_CLASSES, input_shape=(48,48,1), batch_size=64)
+face_model.train_face_model(epochs=50)
 
 
 # The model weights (that are considered the best) can be loaded as -
