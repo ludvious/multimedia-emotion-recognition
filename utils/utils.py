@@ -11,7 +11,7 @@ import wave
 def prepocess_face_dataset(input_shape, batch_size):
 
     train_dir = os.path.join('data\face\fer-2013\train')
-    test_dir = os.path.join('data\face\fer-2013\test')
+    val_dir = os.path.join('data\face\fer-2013\test')
 
     train_dataset = image_dataset_from_directory(
             directory=train_dir,
@@ -25,7 +25,7 @@ def prepocess_face_dataset(input_shape, batch_size):
     )
     
     val_dataset = image_dataset_from_directory(
-        directory=test_dir,
+        directory=val_dir,
         label_mode='categorical',
         subset='validation',
         seed=123,
