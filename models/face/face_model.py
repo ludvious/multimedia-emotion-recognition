@@ -12,9 +12,10 @@ from sklearn.metrics import confusion_matrix, classification_report
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
 class CNNFaceModel:
-    def __init__(self, num_classes, input_shape):
+    def __init__(self, num_classes: int, input_shape, batch_size: int):
         self.num_classes = num_classes
         self.input_shape = input_shape
+        self.batch_size = batch_size
         self.model = self._create_model()
 
     def _create_model(self):
@@ -40,9 +41,10 @@ class CNNFaceModel:
 
         return model
 
-    def train_face_model(self, batch_size: int, epochs: int, patience=50, verbose=1):
+    def train_face_model(self, epochs: int, patience=50, verbose=1):
         
-        train, validation = prepocess_face_dataset(self.input_shape)
+        print(f"Loading and preprocess the data ...\n")
+        train, validation = prepocess_face_dataset(self.input_shape, self.batch_size)
         
         # add callbacks
         early_stop = EarlyStopping('val_loss', patience=50)
@@ -51,8 +53,10 @@ class CNNFaceModel:
         model_names = trained_models_path + '.{epoch:02d}-{val_acc:.2f}.hdf5'
         model_checkpoint = ModelCheckpoint(model_names, 'val_loss', verbose=1,save_best_only=True)
         callbacks = [model_checkpoint, early_stop, reduce_lr]
+        print(f"add callbacks ...\n")
 
-        self.model.fit(train, batch_size=batch_size, epochs=epochs, validation_data=validation, callbacks=callbacks)
+        print(f"Start training ... \n")
+        self.model.fit(train, batch_size=self.batch_size, epochs=epochs, validation_data=validation, callbacks=callbacks)
     
     def plot_training_history(self):
         history = face_model.history

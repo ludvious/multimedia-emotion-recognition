@@ -8,13 +8,7 @@ from keras.api.layers import RandomFlip, RandomRotation, RandomZoom, Rescaling
 import pyaudio
 import wave
 
-class DataLoader:
-    @staticmethod
-    def load_fer2013_data(data_dir):
-        data = pd.read_csv(os.path.join(data_dir, 'fer2013.csv'))
-        return data
-
-def prepocess_face_dataset(input_shape):
+def prepocess_face_dataset(input_shape, batch_size):
 
     train_dir = os.path.join('data\face\fer-2013\train')
     test_dir = os.path.join('data\face\fer-2013\test')
@@ -24,40 +18,67 @@ def prepocess_face_dataset(input_shape):
             label_mode='categorical',
             subset='training',
             seed=123,
+            validation_split=0.15,
             image_size=input_shape[:2],
             color_mode='grayscale',
-            batch_size=64
-        )
+            batch_size=batch_size
+    )
     
     val_dataset = image_dataset_from_directory(
         directory=test_dir,
         label_mode='categorical',
         subset='validation',
         seed=123,
+        validation_split=0.15,
         image_size=input_shape[:2],
         color_mode='grayscale',
-        batch_size=64
+        batch_size=batch_size
     )
 
-    data_augmentation = Sequential([
-        RandomFlip("horizontal"),
-        RandomRotation(0.1),
-        RandomZoom(0.1)
-    ])
-
-    # Add Rescaling layer to normalize pixel values
-    normalization_layer = Rescaling(1./255)
-    
-    train_dataset = train_dataset.map(lambda x, y: (normalization_layer(data_augmentation(x, training=True)), y))
-    #train_dataset = train_dataset.map(lambda x, y: (data_augmentation(x, training=True), y))
-    val_dataset = val_dataset.map(lambda x, y: (normalization_layer(x), y))
-
-    # Prefetch the datasets for better performance
-    train_dataset = train_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
-    val_dataset = val_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+    train_dataset = preprocess_data_images(dataset=train_dataset, type_dataset='train', batch_size=batch_size, augment=True)
+    val_dataset = preprocess_data_images(dataset=val_dataset, type_dataset='val', batch_size=batch_size, augment=True)
 
     return train_dataset, val_dataset
 
+def preprocess_data_images(dataset, type_dataset: str, batch_size: int, augment=False):
+    """metodo per applicare pre-elaborazione (normalization, rescaling, augmentation, shuffle, prefetch) direttamente sui dati prima di essere data in input al modello
+    Args:
+        dataset (_type_): _description_
+        type_dataset (str): _description_
+        batch_size (int): _description_
+        augment (bool, optional): _description_. Defaults to False.
+
+    Returns:
+        dataset (_type_): _description_
+    """
+    
+    # Add Rescaling layer to normalize pixel values
+    normalization_layer = Rescaling(1./255)
+    dataset = dataset.map(lambda x, y: (normalization_layer(x), y))
+
+
+    if augment:
+        # applicazione aumento dei dati
+        data_augmentation = Sequential([
+        RandomFlip("horizontal"),
+        RandomRotation(0.1),
+        RandomZoom(0.1)
+        ])
+
+        dataset = dataset.map(lambda x, y: (data_augmentation(x, training=True), y))
+
+    # Batch all datasets.
+    dataset = dataset.batch(batch_size)
+
+    # cache mantiene le immagini in memoria dopo che sono state caricate dal disco durante la prima epoca. Ciò garantirà che il set di dati non diventi un collo di bottiglia durante l'addestramento del modello
+    # prefetch sovrappone alla preelaborazione dei dati e all'esecuzione del modello durante l'addestramento
+    if type_dataset == 'train':
+        dataset = dataset.cache().shuffle(1000).prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+    
+    if type_dataset == 'val':
+        dataset = dataset.cache().prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+    
+    return dataset
 
 def capture_frames_from_webcam():
     cap = cv2.VideoCapture(0)
