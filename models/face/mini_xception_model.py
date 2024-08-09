@@ -1,7 +1,8 @@
 import os
-from keras.api.models import Sequential
+from keras.api.models import Sequential, Model
 from keras.api.layers import Input, Conv2D, MaxPooling2D, SeparableConv2D, BatchNormalization, Activation, GlobalAveragePooling2D
 from keras.api.regularizers import l2
+from keras.api import layers
 from keras.api.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from utils.emotions import EMOTIONS, NUM_CLASSES
 from utils.utils import prepocess_face_dataset
@@ -20,55 +21,63 @@ class ModelMiniXception:
         
         regularization = l2(l2_regularization)
         
-        model = Sequential()
-
         # base
-        model.add(Input(shape=self.input_shape))
-        model.add(Conv2D(8, (3, 3), strides=(1, 1), activity_regularizer=regularization, use_bias=False, input_shape=self.input_shape))
-        model.add(BatchNormalization())
-        model.add(Activation('relu'))
-        model.add(Conv2D(8, (3, 3), strides=(1, 1), activity_regularizer=regularization, use_bias=False))
-        model.add(BatchNormalization())
-        model.add(Activation('relu'))
+        img_input = Input(self.input_shape)
+        x = Conv2D(8, (3, 3), strides=(1, 1), activity_regularizer=regularization, use_bias=False)(img_input)
+        x = BatchNormalization()(x)
+        x = Activation('relu')(x)
+        x = Conv2D(8, (3, 3), strides=(1, 1), activity_regularizer=regularization, use_bias=False)(x)
+        x = BatchNormalization()(x)
+        x = Activation('relu')(x)
 
-        # x4 module
+        # module 1
+        residual = Conv2D(16, (1, 1), strides=(2, 2), padding='same', use_bias=False)(x)
+        residual = BatchNormalization()(residual)
+        x = SeparableConv2D(16, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False)(x)
+        x = BatchNormalization()(x)
+        x = Activation('relu')(x)
+        x = SeparableConv2D(16, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False)(x)
+        x = BatchNormalization()(x)
+        x = MaxPooling2D((3, 3), strides=(2, 2), padding='same')(x)
+        x = layers.add([x, residual])
 
-        #1
-        model.add(SeparableConv2D(16, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False))
-        model.add(BatchNormalization())
-        model.add(Activation('relu'))
-        model.add(SeparableConv2D(16, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False))
-        model.add(BatchNormalization())
-        model.add(MaxPooling2D((3, 3), strides=(2, 2), padding='same'))
+        # module 2
+        residual = Conv2D(32, (1, 1), strides=(2, 2), padding='same', use_bias=False)(x)
+        residual = BatchNormalization()(residual)
+        x = SeparableConv2D(32, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False)(x)
+        x = BatchNormalization()(x)
+        x = Activation('relu')(x)
+        x = SeparableConv2D(32, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False)(x)
+        x = BatchNormalization()(x)
+        x = MaxPooling2D((3, 3), strides=(2, 2), padding='same')(x)
+        x = layers.add([x, residual])
 
-        #2
-        model.add(SeparableConv2D(32, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False))
-        model.add(BatchNormalization())
-        model.add(Activation('relu'))
-        model.add(SeparableConv2D(32, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False))
-        model.add(BatchNormalization())
-        model.add(MaxPooling2D((3, 3), strides=(2, 2), padding='same'))
+        # module 3
+        residual = Conv2D(64, (1, 1), strides=(2, 2), padding='same', use_bias=False)(x)
+        residual = BatchNormalization()(residual)
+        x = SeparableConv2D(64, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False)(x)
+        x = BatchNormalization()(x)
+        x = Activation('relu')(x)
+        x = SeparableConv2D(64, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False)(x)
+        x = BatchNormalization()(x)
+        x = MaxPooling2D((3, 3), strides=(2, 2), padding='same')(x)
+        x = layers.add([x, residual])
 
-        #3
-        model.add(SeparableConv2D(64, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False))
-        model.add(BatchNormalization())
-        model.add(Activation('relu'))
-        model.add(SeparableConv2D(64, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False))
-        model.add(BatchNormalization())
-        model.add(MaxPooling2D((3, 3), strides=(2, 2), padding='same'))
+        # module 4
+        residual = Conv2D(128, (1, 1), strides=(2, 2), padding='same', use_bias=False)(x)
+        residual = BatchNormalization()(residual)
+        x = SeparableConv2D(128, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False)(x)
+        x = BatchNormalization()(x)
+        x = Activation('relu')(x)
+        x = SeparableConv2D(128, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False)(x)
+        x = BatchNormalization()(x)
+        x = MaxPooling2D((3, 3), strides=(2, 2), padding='same')(x)
+        x = layers.add([x, residual])
+        x = Conv2D(self.num_classes, (3, 3), padding='same')(x)
+        x = GlobalAveragePooling2D()(x)
+        output = Activation('softmax', name='predictions')(x)
 
-        #4
-        model.add(SeparableConv2D(128, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False))
-        model.add(BatchNormalization())
-        model.add(Activation('relu'))
-        model.add(SeparableConv2D(128, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False))
-        model.add(BatchNormalization())
-        model.add(MaxPooling2D((3, 3), strides=(2, 2), padding='same'))
-
-        #
-        model.add(Conv2D(self.num_classes, (3, 3), padding='same'))
-        model.add(GlobalAveragePooling2D())
-        model.add(Activation('softmax', name='predictions'))
+        model = Model(img_input, output)
 
         print(f"Creating Model ...\n")
         model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
@@ -85,9 +94,8 @@ class ModelMiniXception:
             # add callbacks
             early_stop = EarlyStopping('val_loss', patience=50)
             reduce_lr = ReduceLROnPlateau('val_loss', factor=0.1, patience=int(patience/4), verbose=1) # Reduce learning rate when a metric has stopped improving
-            trained_models_path = 'models/face/_mini_xception'
-            model_names = trained_models_path + '.{epoch:02d}-{val_acc:.2f}.hdf5'
-            model_checkpoint = ModelCheckpoint(model_names, 'val_loss', verbose=verbose, save_best_only=True)
+            checkpoint_models_path = 'models/face/mini_xception_'+'{epoch:02d}-{val_loss:.2f}.keras'
+            model_checkpoint = ModelCheckpoint(filepath=checkpoint_models_path, monitor='val_loss', verbose=verbose, save_best_only=True)
             callbacks = [model_checkpoint, early_stop, reduce_lr]
             print(f"add callbacks ...\n")
 

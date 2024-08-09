@@ -40,7 +40,7 @@ def prepocess_face_dataset(input_shape, batch_size):
 
     return train_dataset, val_dataset
 
-def preprocess_data_images(dataset, type_dataset: str, batch_size: int, augment=False):
+def preprocess_data_images(dataset, type_dataset: str, input_shape, batch_size: int, augment=False):
     """metodo per applicare pre-elaborazione (normalization, rescaling, augmentation, shuffle, prefetch) direttamente sui dati prima di essere data in input al modello
     Args:
         dataset (_type_): _description_
@@ -56,28 +56,23 @@ def preprocess_data_images(dataset, type_dataset: str, batch_size: int, augment=
     normalization_layer = Rescaling(1./255)
     dataset = dataset.map(lambda x, y: (normalization_layer(x), y))
 
+    if type_dataset == 'train':
+        dataset = dataset.shuffle(1000)
+
     if augment:
         # applicazione aumento dei dati
         data_augmentation = Sequential([
-        RandomFlip("horizontal"),
+        RandomFlip("horizontal", input_shape=input_shape[:2]),
         RandomRotation(0.1),
         RandomZoom(0.1)
         ])
 
         dataset = dataset.map(lambda x, y: (data_augmentation(x, training=True), y))
 
-    # Batch all datasets.
-    dataset = dataset.batch(batch_size)
-
     # cache mantiene le immagini in memoria dopo che sono state caricate dal disco durante la prima epoca. Ciò garantirà che il set di dati non diventi un collo di bottiglia durante l'addestramento del modello
     # prefetch sovrappone alla preelaborazione dei dati e all'esecuzione del modello durante l'addestramento
-    if type_dataset == 'train':
-        dataset = dataset.cache().shuffle(1000).prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
     
-    if type_dataset == 'val':
-        dataset = dataset.cache().prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
-    
-    return dataset
+    return dataset.cache().prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
 def capture_frames_from_webcam():
     cap = cv2.VideoCapture(0)
