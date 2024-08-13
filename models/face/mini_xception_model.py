@@ -8,8 +8,6 @@ from utils.emotions import EMOTIONS, NUM_CLASSES
 from utils.utils import prepocess_face_dataset
 import matplotlib.pyplot as plt
 
-os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
-
 class ModelMiniXception:
     def __init__(self, num_classes: int, input_shape, batch_size: int) -> None:
         self.num_classes = num_classes
@@ -23,20 +21,20 @@ class ModelMiniXception:
         
         # base
         img_input = Input(self.input_shape)
-        x = Conv2D(8, (3, 3), strides=(1, 1), activity_regularizer=regularization, use_bias=False)(img_input)
+        x = Conv2D(8, (3, 3), strides=(1, 1), kernel_regularizer=regularization, use_bias=False)(img_input)
         x = BatchNormalization()(x)
         x = Activation('relu')(x)
-        x = Conv2D(8, (3, 3), strides=(1, 1), activity_regularizer=regularization, use_bias=False)(x)
+        x = Conv2D(8, (3, 3), strides=(1, 1), kernel_regularizer=regularization, use_bias=False)(x)
         x = BatchNormalization()(x)
         x = Activation('relu')(x)
 
         # module 1
         residual = Conv2D(16, (1, 1), strides=(2, 2), padding='same', use_bias=False)(x)
         residual = BatchNormalization()(residual)
-        x = SeparableConv2D(16, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False)(x)
+        x = SeparableConv2D(16, (3, 3), padding='same', depthwise_regularizer=regularization, pointwise_regularizer=regularization, use_bias=False)(x)
         x = BatchNormalization()(x)
         x = Activation('relu')(x)
-        x = SeparableConv2D(16, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False)(x)
+        x = SeparableConv2D(16, (3, 3), padding='same', depthwise_regularizer=regularization, pointwise_regularizer=regularization, use_bias=False)(x)
         x = BatchNormalization()(x)
         x = MaxPooling2D((3, 3), strides=(2, 2), padding='same')(x)
         x = layers.add([x, residual])
@@ -44,10 +42,10 @@ class ModelMiniXception:
         # module 2
         residual = Conv2D(32, (1, 1), strides=(2, 2), padding='same', use_bias=False)(x)
         residual = BatchNormalization()(residual)
-        x = SeparableConv2D(32, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False)(x)
+        x = SeparableConv2D(32, (3, 3), padding='same', depthwise_regularizer=regularization, pointwise_regularizer=regularization, use_bias=False)(x)
         x = BatchNormalization()(x)
         x = Activation('relu')(x)
-        x = SeparableConv2D(32, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False)(x)
+        x = SeparableConv2D(32, (3, 3), padding='same', depthwise_regularizer=regularization, pointwise_regularizer=regularization, use_bias=False)(x)
         x = BatchNormalization()(x)
         x = MaxPooling2D((3, 3), strides=(2, 2), padding='same')(x)
         x = layers.add([x, residual])
@@ -55,10 +53,10 @@ class ModelMiniXception:
         # module 3
         residual = Conv2D(64, (1, 1), strides=(2, 2), padding='same', use_bias=False)(x)
         residual = BatchNormalization()(residual)
-        x = SeparableConv2D(64, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False)(x)
+        x = SeparableConv2D(64, (3, 3), padding='same', depthwise_regularizer=regularization, pointwise_regularizer=regularization, use_bias=False)(x)
         x = BatchNormalization()(x)
         x = Activation('relu')(x)
-        x = SeparableConv2D(64, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False)(x)
+        x = SeparableConv2D(64, (3, 3), padding='same', depthwise_regularizer=regularization, pointwise_regularizer=regularization, use_bias=False)(x)
         x = BatchNormalization()(x)
         x = MaxPooling2D((3, 3), strides=(2, 2), padding='same')(x)
         x = layers.add([x, residual])
@@ -66,13 +64,14 @@ class ModelMiniXception:
         # module 4
         residual = Conv2D(128, (1, 1), strides=(2, 2), padding='same', use_bias=False)(x)
         residual = BatchNormalization()(residual)
-        x = SeparableConv2D(128, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False)(x)
+        x = SeparableConv2D(128, (3, 3), padding='same', depthwise_regularizer=regularization, pointwise_regularizer=regularization, use_bias=False)(x)
         x = BatchNormalization()(x)
         x = Activation('relu')(x)
-        x = SeparableConv2D(128, (3, 3), padding='same', activity_regularizer=regularization, use_bias=False)(x)
+        x = SeparableConv2D(128, (3, 3), padding='same', depthwise_regularizer=regularization, pointwise_regularizer=regularization, use_bias=False)(x)
         x = BatchNormalization()(x)
         x = MaxPooling2D((3, 3), strides=(2, 2), padding='same')(x)
         x = layers.add([x, residual])
+        
         x = Conv2D(self.num_classes, (3, 3), padding='same')(x)
         x = GlobalAveragePooling2D()(x)
         output = Activation('softmax', name='predictions')(x)
@@ -100,13 +99,14 @@ class ModelMiniXception:
             print(f"add callbacks ...\n")
 
             print(f"Start training ... \n")
-            self.model.fit(train, batch_size=self.batch_size, epochs=epochs, validation_data=validation, callbacks=callbacks)
+            history = self.model.fit(train, batch_size=self.batch_size, epochs=epochs, validation_data=validation, callbacks=callbacks)
 
-    def plot_training_history(self):
-        history = self.model.history
+            return history
+
+    def plot_training_history(self, history):
         plt.figure(figsize=(10, 5))
-        plt.plot(history['acc'], label='Train Accuracy')
-        plt.plot(history['val_acc'], label='Validation Accuracy')
+        plt.plot(history.history['acc'], label='Train Accuracy')
+        plt.plot(history.history['val_acc'], label='Validation Accuracy')
         plt.title('Training and Validation Accuracy')
         plt.xlabel('Epochs')
         plt.ylabel('Accuracy')
@@ -114,8 +114,8 @@ class ModelMiniXception:
         plt.show()
 
         plt.figure(figsize=(10, 5))
-        plt.plot(history['loss'], label='Train Loss')
-        plt.plot(history['val_loss'], label='Validation Loss')
+        plt.plot(history.history['loss'], label='Train Loss')
+        plt.plot(history.history['val_loss'], label='Validation Loss')
         plt.title('Training and Validation Loss')
         plt.xlabel('Epochs')
         plt.ylabel('Loss')

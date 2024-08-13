@@ -54,13 +54,14 @@ class CNNFaceModel:
         print(f"add callbacks ...\n")
 
         print(f"Start training ... \n")
-        self.model.fit(train, batch_size=self.batch_size, epochs=epochs, validation_data=validation, callbacks=callbacks)
+        history = self.model.fit(train, batch_size=self.batch_size, epochs=epochs, validation_data=validation, callbacks=callbacks)
+        
+        return history
     
-    def plot_training_history(self):
-        history = self.model.history
+    def plot_training_history(self, history):
         plt.figure(figsize=(10, 5))
-        plt.plot(history['acc'], label='Train Accuracy')
-        plt.plot(history['val_acc'], label='Validation Accuracy')
+        plt.plot(history.history['acc'], label='Train Accuracy')
+        plt.plot(history.history['val_acc'], label='Validation Accuracy')
         plt.title('Training and Validation Accuracy')
         plt.xlabel('Epochs')
         plt.ylabel('Accuracy')
@@ -68,8 +69,8 @@ class CNNFaceModel:
         plt.show()
 
         plt.figure(figsize=(10, 5))
-        plt.plot(history['loss'], label='Train Loss')
-        plt.plot(history['val_loss'], label='Validation Loss')
+        plt.plot(history.history['loss'], label='Train Loss')
+        plt.plot(history.history['val_loss'], label='Validation Loss')
         plt.title('Training and Validation Loss')
         plt.xlabel('Epochs')
         plt.ylabel('Loss')

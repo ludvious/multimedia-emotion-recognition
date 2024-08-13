@@ -4,7 +4,7 @@ import cv2, os, librosa
 import numpy as np
 from keras.api.utils import image_dataset_from_directory
 from keras.api.models import Sequential
-from keras.api.layers import RandomFlip, RandomRotation, RandomZoom, Rescaling
+from keras.api.layers import RandomFlip, RandomRotation, RandomZoom, Resizing, Rescaling, RandomTranslation, RandomBrightness, RandomContrast
 import pyaudio
 import wave
 
@@ -36,7 +36,7 @@ def prepocess_face_dataset(input_shape, batch_size):
     )
 
     train_dataset = preprocess_data_images(dataset=train_dataset, type_dataset='train', batch_size=batch_size, augment=True)
-    val_dataset = preprocess_data_images(dataset=val_dataset, type_dataset='val', batch_size=batch_size, augment=True)
+    val_dataset = preprocess_data_images(dataset=val_dataset, type_dataset='val', batch_size=batch_size, augment=False)
 
     return train_dataset, val_dataset
 
@@ -51,26 +51,30 @@ def preprocess_data_images(dataset, type_dataset: str, input_shape, batch_size: 
     Returns:
         dataset (_type_): _description_
     """
-    
     # Add Rescaling layer to normalize pixel values
-    normalization_layer = Rescaling(1./255)
+    normalization_layer = Sequential([
+        Resizing(input_shape[0], input_shape[1]),
+        Rescaling(1./255)
+        ])
     dataset = dataset.map(lambda x, y: (normalization_layer(x), y))
 
-    if type_dataset == 'train':
-        dataset = dataset.shuffle(1000)
 
     if augment:
         # applicazione aumento dei dati
         data_augmentation = Sequential([
         RandomFlip("horizontal", input_shape=input_shape[:2]),
-        RandomRotation(0.1),
-        RandomZoom(0.1)
+        RandomRotation(0.2),
+        RandomZoom(0.1),
+        RandomTranslation(0.1, 0.1),
+        RandomBrightness(0.3),
+        RandomContrast(0.1)
         ])
-
         dataset = dataset.map(lambda x, y: (data_augmentation(x, training=True), y))
 
     # cache mantiene le immagini in memoria dopo che sono state caricate dal disco durante la prima epoca. Ciò garantirà che il set di dati non diventi un collo di bottiglia durante l'addestramento del modello
     # prefetch sovrappone alla preelaborazione dei dati e all'esecuzione del modello durante l'addestramento
+    if type_dataset == 'train':
+        dataset = dataset.cache().shuffle(1000)
     
     return dataset.cache().prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
