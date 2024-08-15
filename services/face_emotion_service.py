@@ -1,12 +1,17 @@
 import cv2
 import numpy as np
 from keras.api.models import load_model
-from utils.emotions import EMOTIONS
+#from utils.emotions import EMOTIONS
 import os
 import tensorflow as tf
 
+# app base funziona correttamente, implemetare una migliore app; non funziona se lancio da fedora (problemi con Cuda e tensorflow che non riconosce i driver da fedora pdio)
+#TODO: migliorare la grafica dell applicazione; provare a migliorare il modello (prima priorita a fare quello della voce)
+
+
+EMOTIONS = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
-os.environ['CUDA_VISIBLE_DEVICES'] = ''
+#os.environ['CUDA_VISIBLE_DEVICES'] = ''
 #tf.get_logger().setLevel('ERROR')
 
 class FaceEmotionPredictor:
