@@ -1,6 +1,6 @@
 import os
 from keras.api.models import Sequential
-from keras.api.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from keras.api.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization, Activation, AveragePooling2D, GlobalAveragePooling2D
 from keras.api.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from utils.emotions import EMOTIONS, NUM_CLASSES
 from utils.utils import prepocess_face_dataset
@@ -47,9 +47,8 @@ class CNNFaceModel:
         # add callbacks
         early_stop = EarlyStopping('val_loss', patience=50)
         reduce_lr = ReduceLROnPlateau('val_loss', factor=0.1, patience=int(patience/4), verbose=verbose) # Reduce learning rate when a metric has stopped improving
-        trained_models_path = 'models/face/' + '_cnn'
-        model_names = trained_models_path + '.{epoch:02d}-{val_acc:.2f}.hdf5'
-        model_checkpoint = ModelCheckpoint(model_names, 'val_loss', verbose=1,save_best_only=True)
+        checkpoint_models_path = 'models/face/cnn_'+'checkpoint.model.keras'
+        model_checkpoint = ModelCheckpoint(filepath=checkpoint_models_path, monitor='val_loss', verbose=verbose, save_best_only=True)
         callbacks = [model_checkpoint, early_stop, reduce_lr]
         print(f"add callbacks ...\n")
 
