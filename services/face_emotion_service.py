@@ -2,6 +2,12 @@ import cv2
 import numpy as np
 from keras.api.models import load_model
 from utils.emotions import EMOTIONS
+import os
+import tensorflow as tf
+
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
+#tf.get_logger().setLevel('ERROR')
 
 class FaceEmotionPredictor:
     def __init__(self, model_path):
@@ -64,5 +70,5 @@ def test_face_emotion_predictor_realtime(model_path):
     cap.release()
     cv2.destroyAllWindows()
 
-face_model_path = ''
+face_model_path = 'models/face/mini_xception2_checkpoint.model.keras'
 test_face_emotion_predictor_realtime(face_model_path)
