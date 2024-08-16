@@ -3,7 +3,7 @@ from keras.api.models import Sequential
 from keras.api.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization, Activation, AveragePooling2D, GlobalAveragePooling2D
 from keras.api.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from utils.emotions import EMOTIONS, NUM_CLASSES
-from utils.utils import prepocess_face_dataset
+from models.face.utils import prepocess_face_dataset
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, classification_report
 
