@@ -2,16 +2,97 @@ import cv2
 import pyaudio
 import wave
 import threading
+import tkinter as tk
+from tkinter import messagebox
 from services.face_emotion_service import FaceEmotionPredictor
 from services.speech_emotion_service import speechEmotionPredictor
 
 class EmotionRecognitionApp:
-    def __init__(self) -> None:
-        self.face_predictor = FaceEmotionPredictor('path/to/face_emotion_model.h5')
-        self.speech_predictor = speechEmotionPredictor('path/to/speech_emotion_model.h5')
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Multimodal Emotion Recognition App")
+        
+        self.face_predictor_path = FaceEmotionPredictor('path/to/face_emotion_model.h5')
+        self.speech_predictor_path = speechEmotionPredictor('path/to/speech_emotion_model.h5')
+
         self.is_running = False
         self.audio_frames = []
+        self.cap = None
+        self.audio_thread = None
+
+        self.menu_app()
+
+    def menu_app(self):
+        # Clear the window
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        # Create Start buttons
+        start_face_button = tk.Button(self.root, text="Start Face Emotion Recognition", command=self.start_face_recognition)
+        start_speech_button = tk.Button(self.root, text="Start Speech Emotion Recognition", command=self.start_speech_recognition)
+        exit_app_button = tk.Button(self.root, text="Exit", command=self.root.quit)
+        
+        start_face_button.pack(pady=20)
+        start_speech_button.pack(pady=20)
+        exit_app_button.pack(pady=20)
     
+    def exit_app(self):
+        self.is_running=True
+
+
+    def start_face_recognition(self):
+        self.is_running = True
+        self.cap = cv2.VideoCapture(0)
+        self.show_stop_button(self.stop_face_recognition)
+        self.face_recognition_loop()
+
+    def show_stop_button(self, stop_command):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        stop_button = tk.Button(self.root, text="Stop", command=stop_command)
+        stop_button.pack(pady=20)
+    
+    def stop_face_recognition(self):
+        self.is_running = False
+        if self.cap:
+            self.cap.release()
+        cv2.destroyAllWindows()
+        self.menu_app()
+
+    def face_recognition_loop(self):
+        while self.is_running:
+            ret, frame = self.cap.read()
+            if not ret:
+                print("Errore: Impossibile catturare frame dalla webcam.")
+                break
+            
+            frame_with_emotion = self.face_predictor_path.predict(frame) #prediction
+            cv2.imshow('Face Emotion Recognition', frame_with_emotion) #show frame with label
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                self.stop_face_recognition()
+            else:
+                self.root.after(10, self.face_recognition_loop) #continue every 10 millsec
+
+    def start_speech_recognition(self):
+        self.is_running = True
+        self.audio_frames = []
+        self.audio_thread = threading.Thread(target=self.capture_audio)
+        self.audio_thread.start()
+        self.show_stop_button(self.stop_speech_recognition)
+
+    def stop_speech_recognition(self):
+        self.is_running = False
+        if self.audio_thread:
+            self.audio_thread.join()
+        self.save_audio()
+        speech_emotion = self.speech_predictor_path.predict("output.wav")
+        print(f"Detected: {speech_emotion}")
+        messagebox.showinfo(f"Detected: {speech_emotion}")
+        #back to menu
+        self.menu_app()
+
     def capture_audio(self):
         CHUNK = 1024
         FORMAT = pyaudio.paInt16
@@ -29,37 +110,6 @@ class EmotionRecognitionApp:
         stream.close()
         p.terminate()
 
-    def run(self):
-        self.is_running = True
-        audio_thread = threading.Thread(target=self.capture_audio)
-        audio_thread.start()
-
-        cap = cv2.VideoCapture(0)
-
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-
-            # Face emotion recognition
-            frame_with_emotion = self.face_predictor.predict(frame)
-
-            cv2.imshow('Emotion Recognition', frame_with_emotion)
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-        self.is_running = False
-        audio_thread.join()
-        cap.release()
-        cv2.destroyAllWindows()
-
-        # Speech emotion recognition
-        self.save_audio()
-        speech_emotion = self.speech_predictor.predict("output.wav")
-        print(f"Detected speech emotion: {speech_emotion}")
-
-
     def save_audio(self):
         wf = wave.open("output.wav", 'wb')
         wf.setnchannels(1)
@@ -68,36 +118,8 @@ class EmotionRecognitionApp:
         wf.writeframes(b''.join(self.audio_frames))
         wf.close()
 
-    def run(self):
-        self.is_running = True
-        audio_thread = threading.Thread(target=self.capture_audio)
-        audio_thread.start()
-
-        cap = cv2.VideoCapture(0)
-
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-
-            # Face emotion recognition
-            frame_with_emotion = self.face_predictor.predict(frame)
-
-            cv2.imshow('Emotion Recognition', frame_with_emotion)
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-        self.is_running = False
-        audio_thread.join()
-        cap.release()
-        cv2.destroyAllWindows()
-
-        # Speech emotion recognition
-        self.save_audio()
-        speech_emotion = self.speech_predictor.predict("output.wav")
-        print(f"Detected speech emotion: {speech_emotion}")
 
 if __name__ == "__main__":
-    app = EmotionRecognitionApp()
-    app.run()
+    root = tk.Tk()
+    app = EmotionRecognitionApp(root)
+    root.mainloop()
