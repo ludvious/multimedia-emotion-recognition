@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multimodal Emotion Recognition WebApp</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            text-align: center;
+        }
+        button {
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Multimodal Emotion Recognition</h1>
+        <button onclick="navigateToRoute('face_emotion')">Face Emotion Recognition</button>
+        <button onclick="navigateToRoute('speech_emotion')">Speech Emotion Recognition</button>
+    </div>
+
+    <script>
+        function navigateToRoute(route) {
+            // Sostituisci con l'URL delle tue rotte
+            const baseURL = 'http://127.0.0.1:5000/';
+            window.location.href = baseURL + route;
+        }
+    </script>
+</body>
+</html>
+
+
