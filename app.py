@@ -28,31 +28,30 @@ class EmotionRecognitionApp:
             widget.destroy()
 
         # Create Start buttons
-        start_face_button = tk.Button(self.root, text="Start Face Emotion Recognition", command=self.start_face_recognition)
-        start_speech_button = tk.Button(self.root, text="Start Speech Emotion Recognition", command=self.start_speech_recognition)
+        start_face_button = tk.Button(self.root, text="Face Emotion Recognition", command=self.start_face_recognition)
+        start_speech_button = tk.Button(self.root, text="Speech Emotion Recognition", command=self.start_speech_recognition)
         exit_app_button = tk.Button(self.root, text="Exit", command=self.root.quit)
         
         start_face_button.pack(pady=20)
         start_speech_button.pack(pady=20)
         exit_app_button.pack(pady=20)
     
+    def exit_service(self, stop_command):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        stop_button = tk.Button(self.root, text="Quit", command=stop_command)
+        stop_button.pack(pady=20)
+    
     def exit_app(self):
         self.is_running=True
-
 
     def start_face_recognition(self):
         self.is_running = True
         self.cap = cv2.VideoCapture(0)
-        self.show_stop_button(self.stop_face_recognition)
+        self.exit_service(self.stop_face_recognition)
         self.face_recognition_loop()
 
-    def show_stop_button(self, stop_command):
-        for widget in self.root.winfo_children():
-            widget.destroy()
-
-        stop_button = tk.Button(self.root, text="Stop", command=stop_command)
-        stop_button.pack(pady=20)
-    
     def stop_face_recognition(self):
         self.is_running = False
         if self.cap:
@@ -80,9 +79,10 @@ class EmotionRecognitionApp:
         self.audio_frames = []
         self.audio_thread = threading.Thread(target=self.capture_audio)
         self.audio_thread.start()
-        self.show_stop_button(self.stop_speech_recognition)
+        self.show_stop_record_button(self.check_speech_recognition) #stop recording
+        self.exit_service(self.)
 
-    def stop_speech_recognition(self):
+    def check_speech_recognition(self):
         self.is_running = False
         if self.audio_thread:
             self.audio_thread.join()
