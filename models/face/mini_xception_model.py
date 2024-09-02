@@ -4,8 +4,7 @@ from keras.api.layers import Input, Conv2D, MaxPooling2D, SeparableConv2D, Batch
 from keras.api.regularizers import l2
 from keras.api import layers
 from keras.api.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
-from utils.emotions import EMOTIONS, NUM_CLASSES
-from utils.utils import prepocess_face_dataset
+from utils import prepocess_face_dataset
 import matplotlib.pyplot as plt
 
 class ModelMiniXception:
