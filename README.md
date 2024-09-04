@@ -9,18 +9,19 @@
 
 
 
-## aggiornamenti TODO per ESAME
+## aggiornamenti TODO
 
 - ~~Web app installata  e funzionante su server locale, altrimenti saremmo dipendenti dal sistema operativo~~.
 - ~~La app dovrà essere funzionante in real time, poi dipende dal dato... Per riconoscere un volto, dovrà vedere il volto e riconoscerlo~~.
-- Se mi fai un pulsante per caricare degli esempi di foto da disco e mi mostri che li riconosce come esempio di precisione (perché ci sta che riconosca meglio un volto di un altro) va bene, ma deve girare anche in real time.
+- Se mi fai un pulsante per caricare degli esempi di foto da disco e mi mostri che li riconosce come esempio di precisione (perché ci sta che riconosca meglio un volto di un altro) va bene
+- ~~girare anche in real time.~~
 
 - fare dataset speech emotion: Per la raccolta dati, usa direttamente la label nella ricerca dei video (ad esempio "Joy"). Se trovi troppi video non correnti, raffina la ricerca (joyful girl, laughing man...), poi selezioni le clip funzionali: il modo più rapido è trasformarle in immagini (lo sono già, in numero pari alla frequenza.... un girato a 1/30 avrà 30 immagini al secondo) e selezioni e butti quelle che non ti sembrano buone o hanno rumore. Dal sistema operativo, mettendo la visualizzazione con icone grandi, si fa al volo col mouse. Questo per.ogni video, per ogni emozione del modello, finché non hai un numero adeguato (possibilmente ma non necessariamente bilanciato tra classi).
 - implementare modello per speech emotion, poi fare training ecc
 
 - upgrade face recognition model: provare minix piu grande e vedere se funziona (anche con augmentation):
-    - provare augmentation con tensorflow image e vedere se cambia qualcosa sull allenamento con il modello delle facce
-        (https://www.tensorflow.org/tutorials/images/data_augmentation?hl=it#using_tfimage)
+    - ~~provare augmentation con tensorflow image e vedere se cambia qualcosa sull allenamento con il modello delle facce~~
+        ~~(https://www.tensorflow.org/tutorials/images/data_augmentation?hl=it#using_tfimage)~~ 
     - alternativa, usare keras 2 con il suo preprocessing e augmentation che funziona su quei dati
 
 - per entrambi modelli fare valuation e salvare screenshoot per relazione esame, mettere matrice di confusione della evaluation, architettura modello e summary
