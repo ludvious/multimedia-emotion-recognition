@@ -3,11 +3,12 @@ from keras.api.models import Sequential
 from keras.api.layers import RandomFlip, RandomRotation, RandomZoom, Resizing, Rescaling, RandomTranslation, RandomBrightness, RandomContrast
 import tensorflow as tf
 import pandas as pd
-import cv2, os, librosa
+import cv2, os, librosa, pyaudio, wave
 import numpy as np
-import pyaudio
-import wave
-
+import moviepy.editor as mp
+from pytube import YouTube
+from moviepy.editor import *
+import matplotlib as plt
 
 def prepocess_face_dataset(input_shape, batch_size):
 
@@ -36,12 +37,12 @@ def prepocess_face_dataset(input_shape, batch_size):
         batch_size=batch_size
     )
 
-    train_dataset = preprocess_data_images(dataset=train_dataset, type_dataset='train', batch_size=batch_size, augment=True)
-    val_dataset = preprocess_data_images(dataset=val_dataset, type_dataset='val', batch_size=batch_size, augment=False)
+    train_dataset = normalize_augmentation_images(dataset=train_dataset, type_dataset='train', batch_size=batch_size, augment=True)
+    val_dataset = normalize_augmentation_images(dataset=val_dataset, type_dataset='val', batch_size=batch_size, augment=False)
 
     return train_dataset, val_dataset
 
-def preprocess_data_images(dataset, input_shape, batch_size: int, augment=False):
+def normalize_augmentation_images(dataset, input_shape, batch_size: int, augment=False):
     """metodo per applicare pre-elaborazione (normalization, rescaling, augmentation, shuffle, prefetch) direttamente sui dati prima di essere data in input al modello
     Args:
         dataset (_type_): _description_
@@ -74,44 +75,49 @@ def preprocess_data_images(dataset, input_shape, batch_size: int, augment=False)
     return dataset.cache().prefetch(buffer_size=tf.data.AUTOTUNE)
 
 
-def new_record_audio(chunk_audio=1024, format_audio=pyaudio.paInt16, channels_audio=2, rate_audio=44100):
-    """method for add the possibility for record a personal audio and for test it in future
+def get_audio_from_mp4(filepath):
 
-    Args:
-        chunk_audio (int, optional): _description_. Defaults to 1024.
-        format_audio (_type_, optional): _description_. Defaults to pyaudio.paInt16.
-        channels_audio (int, optional): _description_. Defaults to 2.
-        rate_audio (int, optional): _description_. Defaults to 44100.
-    """
-    
-    record_seconds = 5
-    wave_output_filname = "audio_record_output.wav"
+    files = os.listdir(filepath)
 
-    p = pyaudio.PyAudio()
+    for file in files:
+        if file.endswith(".m4v"):
+            fileName = os.path.splitext(file)
+            video = mp.VideoFileClip(filepath+file)
+            audio = video.audio
+            audio.write_audiofile(filepath+fileName[0]+".wav")
 
-    stream = p.open(format=format_audio,
-                    channels=channels_audio,
-                    rate=rate_audio,
-                    input=True,
-                    frames_per_buffer=chunk_audio) #buffer
+def get_audio_from_yt(youtube_url):
+    # download a file with only audio, to save space
+    # if the final goal is to convert to mp3
+    y = YouTube(youtube_url)
+    t = y.streams.filter(only_audio=True).all()
+    t[0].download(output_path="../VideoFiles")
 
-    print("* Start recording ... ")
-
-    frames = []
-
-    for i in range(0, int(rate_audio / chunk_audio * record_seconds)):
-        data = stream.read(chunk_audio)
-        frames.append(data) # 2 bytes(16 bits) per channel
-
-    print("* Stop recording ... ")
-
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
-
-    wf = wave.open(wave_output_filname, 'wb')
-    wf.setnchannels(channels_audio)
-    wf.setsampwidth(p.get_sample_size(format_audio))
-    wf.setframerate(rate_audio)
-    wf.writeframes(b''.join(frames))
-    wf.close()
+def audio_to_spectrogram(sample_rate, audio_path, output_image_path=None):
+        """
+        Converte un file audio in uno spettrogramma e lo salva come immagine.
+        
+        :param audio_path: Percorso del file audio
+        :param output_image_path: Percorso del file immagine in output. Se non specificato, usa lo stesso nome dell'audio.
+        :return: Percorso del file immagine salvato
+        """
+        if output_image_path is None:
+            output_image_path = os.path.splitext(audio_path)[0] + "_spectrogram.png"
+        
+        # Carica l'audio
+        y, sr = librosa.load(audio_path, sr=sample_rate)
+        
+        # Genera lo spettrogramma
+        spectrogram = librosa.feature.melspectrogram(y=y, sr=sr)
+        spectrogram_db = librosa.power_to_db(spectrogram, ref=np.max)
+        
+        # Salva lo spettrogramma come immagine
+        plt.figure(figsize=(10, 4))
+        librosa.display.specshow(spectrogram_db, sr=sr, x_axis='time', y_axis='mel')
+        plt.colorbar(format='%+2.0f dB')
+        plt.title('Mel Spectrogram')
+        plt.tight_layout()
+        plt.savefig(output_image_path)
+        plt.close()
+        
+        return output_image_path

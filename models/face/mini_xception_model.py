@@ -128,7 +128,7 @@ class ModelMiniXception:
         plt.legend()
         plt.show()        
 
-face_model = ModelMiniXception(num_classes=NUM_CLASSES, input_shape=(48,48,1), batch_size=32)
+face_model = ModelMiniXception(num_classes=7, input_shape=(48,48,1), batch_size=32)
 face_model.train_face_model()
 
 # The model weights (that are considered the best) can be loaded as -
