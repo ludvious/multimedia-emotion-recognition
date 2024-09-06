@@ -4,12 +4,13 @@ from keras.api.layers import Input, Conv2D, MaxPooling2D, SeparableConv2D, Batch
 from keras.api.regularizers import l2
 from keras.api import layers
 from keras.api.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
-from utils import prepocess_face_dataset
+from models.utils import prepocess_face_dataset
 import matplotlib.pyplot as plt
+from config import NUM_LABELS
 
 class ModelMiniXception:
-    def __init__(self, num_classes: int, input_shape, batch_size: int) -> None:
-        self.num_classes = num_classes
+    def __init__(self, input_shape, batch_size: int) -> None:
+        self.num_labels = NUM_LABELS
         self.input_shape = input_shape
         self.batch_size = batch_size
         self.model = self._create_model()
@@ -78,7 +79,7 @@ class ModelMiniXception:
         x = layers.add([x, residual])
         
         # fully connected
-        x = Conv2D(self.num_classes, (3, 3), padding='same')(x)
+        x = Conv2D(self.num_labels, (3, 3), padding='same')(x)
         x = GlobalAveragePooling2D()(x)
         output = Activation('softmax', name='predictions')(x)
 
@@ -128,7 +129,7 @@ class ModelMiniXception:
         plt.legend()
         plt.show()        
 
-face_model = ModelMiniXception(num_classes=7, input_shape=(48,48,1), batch_size=32)
+face_model = ModelMiniXception(num_labels=7, input_shape=(48,48,1), batch_size=32)
 face_model.train_face_model()
 
 # The model weights (that are considered the best) can be loaded as -

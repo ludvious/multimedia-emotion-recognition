@@ -1,7 +1,6 @@
 import pyaudio
 import wave
 
-
 def new_record_audio(chunk_audio=1024, format_audio=pyaudio.paInt16, channels_audio=2, rate_audio=44100):
     """method for add the possibility for record a personal audio and for test it in future
 

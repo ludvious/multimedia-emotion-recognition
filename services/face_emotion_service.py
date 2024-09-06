@@ -3,10 +3,7 @@ import numpy as np
 from keras.api.models import load_model
 from keras.api.preprocessing.image import img_to_array
 import os
-import tensorflow as tf
-
-LABELS = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
-os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+from config import LABELS, TF_ENABLE_ONEDNN_OPTS
 
 class FaceEmotionService:
     def __init__(self, model_path: str):
@@ -14,6 +11,7 @@ class FaceEmotionService:
         self.face_detector = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
         self.cap = cv2.VideoCapture(0) #index relative the webcam (0 if you have only preset cam installed, index can be different if you have more cam plugged on your OS)
         self.labels = LABELS
+        self.tf_oneddnn = TF_ENABLE_ONEDNN_OPTS
     
     def __del__(self):
         self.cap.release()
