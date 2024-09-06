@@ -4,6 +4,14 @@ import matplotlib as plt
 from pytube import YouTube
 import moviepy.editor as mp
 
+def add_folders(start_path, labels):
+    if not os.path.exists(start_path):
+        os.makedirs(start_path)
+    
+    for label in labels:
+        label_folder = os.path.join(start_path, label)
+        os.makedirs(label_folder)
+
 def new_record_audio(chunk_audio=1024, format_audio=pyaudio.paInt16, channels_audio=2, rate_audio=44100):
     """method for add the possibility for record a personal audio and for test it in future
 

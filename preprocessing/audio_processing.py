@@ -2,15 +2,15 @@ import os, librosa, pyaudio, wave
 import numpy as np
 from moviepy.editor import *
 import matplotlib as plt
-from config import SAMPLING_RATE, MIN_AUDIO_LEN, MAX_AUDIO_LEN, N_MELS_BAND
+from config import SAMPLING_RATE, MIN_AUDIO_LEN, MAX_AUDIO_LEN, N_MELS_BAND, HOP_LENGTH
 
 class AudioProcessing:
-    def __init__(self, audio_data_path, frame_length, hop_length, duration) -> None:
+    def __init__(self, audio_data_path, frame_length, duration) -> None:
         self.audio_data_path = audio_data_path
         self.sampling_rate = SAMPLING_RATE
         self.n_mels_band = N_MELS_BAND
         self.frame_length = frame_length
-        self.hop_length = hop_length
+        self.hop_length = HOP_LENGTH
         self.duration = duration
         self.min_audio_len = MIN_AUDIO_LEN
         self.max_audio_len = MAX_AUDIO_LEN
@@ -88,6 +88,7 @@ class AudioProcessing:
         3 - passaggio da fare manualmente, controllare i spettogrammi buoni e filtrare quelli non rumorosi e non buoni
         4- una volta fatto 3 passaggio, si carica le immagini e le si preparano per essere date in input al modello (questo é fatto con un altro metodo o classe)
         """
+        # check se esiste path di destinazione
         if not os.path.exists(spec_path):
             os.makedirs(spec_path)
 
