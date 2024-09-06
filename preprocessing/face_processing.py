@@ -2,13 +2,7 @@ from keras.api.utils import image_dataset_from_directory
 from keras.api.models import Sequential
 from keras.api.layers import RandomFlip, RandomRotation, RandomZoom, Resizing, Rescaling, RandomTranslation, RandomBrightness, RandomContrast
 import tensorflow as tf
-import pandas as pd
-import cv2, os, librosa, pyaudio, wave
-import numpy as np
-import moviepy.editor as mp
-from pytube import YouTube
-from moviepy.editor import *
-import matplotlib as plt
+import os
 
 def prepocess_face_dataset(input_shape, batch_size):
 
@@ -73,51 +67,3 @@ def normalize_augmentation_images(dataset, input_shape, batch_size: int, augment
     dataset = dataset.shuffle(1000)
     
     return dataset.cache().prefetch(buffer_size=tf.data.AUTOTUNE)
-
-
-def get_audio_from_mp4(filepath):
-
-    files = os.listdir(filepath)
-
-    for file in files:
-        if file.endswith(".m4v"):
-            fileName = os.path.splitext(file)
-            video = mp.VideoFileClip(filepath+file)
-            audio = video.audio
-            audio.write_audiofile(filepath+fileName[0]+".wav")
-
-def get_audio_from_yt(youtube_url):
-    # download a file with only audio, to save space
-    # if the final goal is to convert to mp3
-    y = YouTube(youtube_url)
-    t = y.streams.filter(only_audio=True).all()
-    t[0].download(output_path="../VideoFiles")
-
-def audio_to_spectrogram(sample_rate, audio_path, output_image_path=None):
-        """
-        Converte un file audio in uno spettrogramma e lo salva come immagine.
-        
-        :param audio_path: Percorso del file audio
-        :param output_image_path: Percorso del file immagine in output. Se non specificato, usa lo stesso nome dell'audio.
-        :return: Percorso del file immagine salvato
-        """
-        if output_image_path is None:
-            output_image_path = os.path.splitext(audio_path)[0] + "_spectrogram.png"
-        
-        # Carica l'audio
-        y, sr = librosa.load(audio_path, sr=sample_rate)
-        
-        # Genera lo spettrogramma
-        spectrogram = librosa.feature.melspectrogram(y=y, sr=sr)
-        spectrogram_db = librosa.power_to_db(spectrogram, ref=np.max)
-        
-        # Salva lo spettrogramma come immagine
-        plt.figure(figsize=(10, 4))
-        librosa.display.specshow(spectrogram_db, sr=sr, x_axis='time', y_axis='mel')
-        plt.colorbar(format='%+2.0f dB')
-        plt.title('Mel Spectrogram')
-        plt.tight_layout()
-        plt.savefig(output_image_path)
-        plt.close()
-        
-        return output_image_path

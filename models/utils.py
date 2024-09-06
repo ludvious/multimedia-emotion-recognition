@@ -1,5 +1,6 @@
-import pyaudio
-import wave
+import pyaudio, wave, librosa
+import numpy as np
+import matplotlib as plt
 
 def new_record_audio(chunk_audio=1024, format_audio=pyaudio.paInt16, channels_audio=2, rate_audio=44100):
     """method for add the possibility for record a personal audio and for test it in future
@@ -42,3 +43,17 @@ def new_record_audio(chunk_audio=1024, format_audio=pyaudio.paInt16, channels_au
     wf.setframerate(rate_audio)
     wf.writeframes(b''.join(frames))
     wf.close()
+
+# Plot the Mel spectrogram
+def plot_spec(audio_data, sr, name):
+
+    spec = librosa.feature.melspectrogram(y=audio_data, sr=sr, n_mels=128)
+    spec_db = librosa.amplitude_to_db(spec, ref=np.max)
+
+    plt.figure(figsize=(12,4))
+    librosa.display.specshow(spec_db, sr=sr,
+        x_axis='time', y_axis='mel',
+        hop_length=sr * 0.01)
+    plt.colorbar(format='%+02.0f dB')
+    plt.savefig('figs/{}.png'.format(name))
+    plt.clf()

@@ -1,10 +1,9 @@
-import os
-from keras.api.models import Sequential, Model
+from keras.api.models import Model
 from keras.api.layers import Input, Conv2D, MaxPooling2D, SeparableConv2D, BatchNormalization, Activation, GlobalAveragePooling2D
 from keras.api.regularizers import l2
 from keras.api import layers
 from keras.api.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
-from models.utils import prepocess_face_dataset
+from preprocessing.face_processing import prepocess_face_dataset
 import matplotlib.pyplot as plt
 from config import NUM_LABELS
 
