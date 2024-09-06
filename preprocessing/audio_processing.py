@@ -1,25 +1,27 @@
 import os, librosa, pyaudio, wave
+from librosa.util import fix_length
 import numpy as np
 from moviepy.editor import *
-import matplotlib as plt
+from pathlib import Path
+import matplotlib
+import matplotlib.pyplot as plt
 from config import SAMPLING_RATE, MIN_AUDIO_LEN, MAX_AUDIO_LEN, N_MELS_BAND, HOP_LENGTH
 
 class AudioProcessing:
-    def __init__(self, audio_data_path, frame_length, duration) -> None:
+    def __init__(self, audio_data_path) -> None:
         self.audio_data_path = audio_data_path
         self.sampling_rate = SAMPLING_RATE
         self.n_mels_band = N_MELS_BAND
-        self.frame_length = frame_length
         self.hop_length = HOP_LENGTH
-        self.duration = duration
         self.min_audio_len = MIN_AUDIO_LEN
         self.max_audio_len = MAX_AUDIO_LEN
+        self.max_hz_audio_len = MAX_AUDIO_LEN * SAMPLING_RATE  #usato per fare il padding, misura lunghezza audio in hz
 
     #TODO: vedere come funzionano e gestire i parametri relativi all audio come sample rate, hop length etc
 
     def load_audio(self, file_path):
         """
-        Load and preprocess audio file.
+        Load and preprocess audio file: applying resampling and pad/trunc to normalize all audio
         
         Args:
             file_path (str): Path to an audio file.
@@ -27,12 +29,20 @@ class AudioProcessing:
         Returns:
             np.ndarray: Audio time-series array.
         """
-        audio, sr = librosa.load(file_path, sr=self.sampling_rate)
-        # cut or pad the audio to a fixed length
-        if len(audio) > self.max_audio_len:
-            audio = audio[:self.max_audio_len]
-        else:
-            audio = np.pad(audio, (0, max(0, self.max_audio_len - len(audio))), 'constant')
+        audio, sr = librosa.load(file_path, sr=None) #load audio with original sampling rate
+        print(f"Loaded audio min: {audio.min()}, max: {audio.max()}; Sample Rate: {sr}")
+        #resample to target rate for normalize all audio
+        if sr != self.sampling_rate:
+            audio = librosa.resample(audio, orig_sr=sr, target_sr=self.sampling_rate)
+            print(f"Sample Rate after resample: {sr}")
+
+        if len(audio) == 0:
+            raise ValueError("Audio data is empty")
+        # cut or pad the audio to a fixed length TODO DA TESTARE
+        if len(audio) < MIN_AUDIO_LEN:
+            audio = fix_length(audio, size=MAX_AUDIO_LEN*self.sampling_rate)
+        if len(audio) > MAX_AUDIO_LEN:
+            audio = fix_length(audio, size=MAX_AUDIO_LEN*self.sampling_rate)
         
         return audio, sr
     
@@ -43,42 +53,48 @@ class AudioProcessing:
         Args: audio (np.ndarray): Audio time-series array.
 
         Returns: np.ndarray: Mel spectrogram.
-        """
+        """        
         mel_features = librosa.feature.melspectrogram(y=audio_data, sr=self.sampling_rate, hop_length=self.hop_length)
-        mel_spec_db = librosa.power_to_db(mel_features).flatten() #convert to decibel
+        mel_spec_db = librosa.power_to_db(mel_features, ref=np.max) #convert to decibel
+
+        if mel_features.max() == 0:
+            raise ValueError("Mel spectrogram contains only zeros.")
+        if mel_spec_db.shape[1] == 0:
+            raise ValueError("Invalid spectrogram shape")
+        
         return mel_spec_db
     
-    def audio_to_spectrogram(self, audio_path, label, sample_rate, hop_length, plot=True):
+    def audio_to_spectrogram(self, audio_path, label):
         """
-        Converte un file audio in un spettrogramma e lo salva come immagine.
+        Converte un file audio in un spettrogramma e lo salva come img.
         
         :param audio_path: Percorso del file audio
         :param output_image_path: Percorso del file immagine in output. Se non specificato, usa lo stesso nome dell'audio.
         :return: Percorso del file immagine salvato
         """
-        spec_folder = 'spectrogram'
-
+        audio_file_path = Path(audio_path)
+        output_folder = Path('data/speech/spectrogram/')
+        spec_label_folder = output_folder / label  # The `/` operator works with pathlib to join paths
         # Create subfolder for the label if it doesn't exist
-        spec_label_folder = os.path.join(spec_folder, label) # => spectrogram/label/
-        if not os.path.exists(spec_label_folder):
-            os.makedirs(spec_label_folder)
+        spec_label_folder.mkdir(parents=True, exist_ok=True) # => spectrogram/label/
 
-        y, sr = self.load_audio(audio_path, sr=sample_rate)
-        file_name = os.path.splitext(audio_path)[0] # mantain the same name file
+        y, sr = self.load_audio(audio_file_path)
+        file_name = os.path.splitext(os.path.basename(audio_path))[0] # pick the same name file
         
         # Genera lo spettrogramma
-        spec_db = self.extract_feature(data=y, sampling_rate=sr, hop_length=hop_length)
+        spec_db = self.extract_feature(audio_data=y)
         
         # Salva lo spettrogramma come immagine
-        if plot:
-            plt.figure(figsize=(10, 4))
-            librosa.display.specshow(spec_db, sr=sr, x_axis='time', y_axis='mel')
-            #plt.colorbar(format='%+2.0f dB')
-            #plt.title(f'Mel Spectrogram ({label})')
-            plt.axis('off')
-            plt.tight_layout(pad=0)
+        matplotlib.use('TkAgg',force=True)
+        plt.figure(figsize=(10, 4))
+        librosa.display.specshow(spec_db, sr=sr, x_axis='time', y_axis='mel')
+        #plt.colorbar(format='%+2.0f dB')
+        #plt.title(f'Mel Spectrogram ({label})')
+        plt.axis('off')
+        #plt.tight_layout(pad=0)
         # Save image to label folder with .png extension
-        plt.savefig(os.path.join(spec_label_folder, f'{file_name}.png'), bbox_inches='tight', pad_inches=0)
+        output_path = spec_label_folder / f'{file_name}.png'
+        plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
         plt.close()
     
     def generate_mel_spectrogram(self, spec_path='data/speech/spectrogram'):
@@ -88,9 +104,9 @@ class AudioProcessing:
         3 - passaggio da fare manualmente, controllare i spettogrammi buoni e filtrare quelli non rumorosi e non buoni
         4- una volta fatto 3 passaggio, si carica le immagini e le si preparano per essere date in input al modello (questo é fatto con un altro metodo o classe)
         """
+        #TODO: SISTEMARE PATH LIB QUI AL POSTO DI OS LIB
         # check se esiste path di destinazione
-        if not os.path.exists(spec_path):
-            os.makedirs(spec_path)
+        spec_path.mkdir(parents=True, exist_ok=True) # => spectrogram/label/
 
         for label in os.listdir(self.audio_data_path):
             label_folder = os.path.join(self.audio_data_path, label)
