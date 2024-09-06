@@ -9,8 +9,8 @@ LABELS = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
 class FaceEmotionService:
-    def __init__(self):
-        self.model = load_model('models/face/mini_xception2_checkpoint.model.keras')
+    def __init__(self, model_path: str):
+        self.model = load_model(model_path)
         self.face_detector = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
         self.cap = cv2.VideoCapture(0) #index relative the webcam (0 if you have only preset cam installed, index can be different if you have more cam plugged on your OS)
         self.labels = LABELS

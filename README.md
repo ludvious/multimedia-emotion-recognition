@@ -17,7 +17,8 @@
 - ~~girare anche in real time.~~
 
 - fare dataset speech emotion: Per la raccolta dati, usa direttamente la label nella ricerca dei video (ad esempio "Joy"). Se trovi troppi video non correnti, raffina la ricerca (joyful girl, laughing man...), poi selezioni le clip funzionali: il modo più rapido è trasformarle in immagini (lo sono già, in numero pari alla frequenza.... un girato a 1/30 avrà 30 immagini al secondo) e selezioni e butti quelle che non ti sembrano buone o hanno rumore. Dal sistema operativo, mettendo la visualizzazione con icone grandi, si fa al volo col mouse. Questo per.ogni video, per ogni emozione del modello, finché non hai un numero adeguato (possibilmente ma non necessariamente bilanciato tra classi).
-- implementare modello per speech emotion, poi fare training ecc
+- ~~definire modello per speech emotion~~, poi fare training ecc
+- implementare il servizio nell app
 
 - upgrade face recognition model: provare minix piu grande e vedere se funziona (anche con augmentation):
     - ~~provare augmentation con tensorflow image e vedere se cambia qualcosa sull allenamento con il modello delle facce~~

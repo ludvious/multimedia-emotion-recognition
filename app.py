@@ -14,7 +14,7 @@ def face_emotion():
     return render_template('face_service.html')
 
 # funzione che genera uno stream di immagini video da una camera
-def gen(camera):
+def start_stream(camera):
     while True:
         frame = camera.predict()
 
@@ -24,7 +24,8 @@ def gen(camera):
 # rotta in cui viene eseguito lo streaming e il modello
 @app.route('/video_feed')
 def video_feed():
-    return Response(gen(FaceEmotionService()), mimetype='multipart/x-mixed-replace; boundary=frame')
+    model_path = 'models/face/mini_xception2_checkpoint.model.keras'
+    return Response(start_stream(FaceEmotionService(model_path=model_path)), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 '''@app.route('/face_emotion/predict', methods=['POST'])
 def predict_face_emotion():
