@@ -1,6 +1,8 @@
-import pyaudio, wave, librosa
+import pyaudio, wave, librosa, os
 import numpy as np
 import matplotlib as plt
+from pytube import YouTube
+import moviepy.editor as mp
 
 def new_record_audio(chunk_audio=1024, format_audio=pyaudio.paInt16, channels_audio=2, rate_audio=44100):
     """method for add the possibility for record a personal audio and for test it in future
@@ -44,8 +46,28 @@ def new_record_audio(chunk_audio=1024, format_audio=pyaudio.paInt16, channels_au
     wf.writeframes(b''.join(frames))
     wf.close()
 
-# Plot the Mel spectrogram
+def get_audio_from_mp4(filepath):
+
+    files = os.listdir(filepath)
+
+    for file in files:
+        if file.endswith(".m4v"):
+            fileName = os.path.splitext(file)
+            video = mp.VideoFileClip(filepath+file)
+            audio = video.audio
+            audio.write_audiofile(filepath+fileName[0]+".wav")
+
+def get_audio_from_yt(youtube_url):
+    # download a file with only audio, to save space
+    # if the final goal is to convert to mp3
+    y = YouTube(youtube_url)
+    t = y.streams.filter(only_audio=True).all()
+    t[0].download(output_path="../VideoFiles")
+
+
 def plot_spec(audio_data, sr, name):
+    """stampa a video lo spettogramma e lo salva come immagine
+    """
 
     spec = librosa.feature.melspectrogram(y=audio_data, sr=sr, n_mels=128)
     spec_db = librosa.amplitude_to_db(spec, ref=np.max)

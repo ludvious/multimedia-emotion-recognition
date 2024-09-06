@@ -4,6 +4,12 @@ from keras.api.layers import RandomFlip, RandomRotation, RandomZoom, Resizing, R
 import tensorflow as tf
 import os
 
+class FaceProcessing:
+    def __init__(self) -> None:
+        pass
+
+    
+
 def prepocess_face_dataset(input_shape, batch_size):
 
     train_dir = os.path.join('data\face\fer-2013\train')
