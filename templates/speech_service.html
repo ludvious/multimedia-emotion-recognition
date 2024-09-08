@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Classification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        #status {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Speech Classification</h1>
+
+<button id="recordButton">Start Recording</button>
+
+<div id="status"></div>
+
+<script>
+    const recordButton = document.getElementById('recordButton');
+    const statusDiv = document.getElementById('status');
+    let mediaRecorder;
+    let audioChunks = [];
+    const duration = 4000;  // Set the duration of recording for 5 seconds (5000 ms)
+
+    recordButton.addEventListener('click', () => {
+        startRecording();
+    });
+
+    function startRecording() {
+        // Method for add taudio and for testing
+        // Ask the user for microphone access
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.start();
+
+                statusDiv.innerHTML = "* Start Recording...";
+
+                // Store audio data as it comes in
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                // Stop the recording after the set duration
+                setTimeout(() => {
+                    mediaRecorder.stop();
+                    statusDiv.innerHTML = "Recording stopped.";
+                }, duration);
+
+                // When the recording stops, send the audio to the server
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    sendAudioToServer(audioBlob);
+                    audioChunks = [];  // Clear the chunks for the next recording
+                };
+            })
+            .catch(err => {
+                console.error('The following error occurred: ' + err);
+            });
+    }
+
+    function sendAudioToServer(audioBlob) {
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'audio.wav');
+
+        fetch('http://127.0.0.1:5000/predict-audio', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            const predictedLabel = data.predicted_label;
+            statusDiv.innerHTML = `Predicted Label: ${predictedLabel}`;
+        })
+        .catch(error => {
+            statusDiv.innerHTML = `Error: ${error}`;
+        });
+    }
+</script>
+
+</body>
+</html>
