@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib as plt
 from pytube import YouTube
 import moviepy.editor as mp
+from audio_processing import AudioProcessing
+from config import SAMPLING_RATE
 
 def add_folders(start_path, labels):
     if not os.path.exists(start_path):
@@ -12,47 +14,30 @@ def add_folders(start_path, labels):
         label_folder = os.path.join(start_path, label)
         os.makedirs(label_folder)
 
-def new_record_audio(chunk_audio=1024, format_audio=pyaudio.paInt16, channels_audio=2, rate_audio=44100):
-    """method for add the possibility for record a personal audio and for test it in future
+def gen_mel_spectrogram_dataset(audio_path: str, spec_path: str):
+        """metodo per generare le immagini spettogrammi dei file audio e salvarle(vengono eseguito step 1 e 2 descritti qui):
+        1 - carico i file audio e li pre elaboro
+        2 - genero i spettogrammi e li salvo in una cartella divisi per label
+        3 - passaggio da fare manualmente, controllare i spettogrammi buoni e filtrare quelli non rumorosi e non buoni
+        4- una volta fatto 3 passaggio, si carica le immagini e le si preparano per essere date in input al modello (questo é fatto con un altro metodo o classe)
+        """
+        #spec_path = 'data/speech/spectrogram'
+        preproc = AudioProcessing(audio_path=audio_path)
+        #TODO: SISTEMARE PATH LIB QUI AL POSTO DI OS LIB
+        # check se esiste path di destinazione
+        spec_path.mkdir(parents=True, exist_ok=True) # => spectrogram/label/
 
-    Args:
-        chunk_audio (int, optional): _description_. Defaults to 1024.
-        format_audio (_type_, optional): _description_. Defaults to pyaudio.paInt16.
-        channels_audio (int, optional): _description_. Defaults to 2.
-        rate_audio (int, optional): _description_. Defaults to 44100.
-    """
-    
-    record_seconds = 5
-    wave_output_filname = "audio_record_output.wav"
-
-    p = pyaudio.PyAudio()
-
-    stream = p.open(format=format_audio,
-                    channels=channels_audio,
-                    rate=rate_audio,
-                    input=True,
-                    frames_per_buffer=chunk_audio) #buffer
-
-    print("* Start recording ... ")
-
-    frames = []
-
-    for i in range(0, int(rate_audio / chunk_audio * record_seconds)):
-        data = stream.read(chunk_audio)
-        frames.append(data) # 2 bytes(16 bits) per channel
-
-    print("* Stop recording ... ")
-
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
-
-    wf = wave.open(wave_output_filname, 'wb')
-    wf.setnchannels(channels_audio)
-    wf.setsampwidth(p.get_sample_size(format_audio))
-    wf.setframerate(rate_audio)
-    wf.writeframes(b''.join(frames))
-    wf.close()
+        for label in os.listdir(audio_path):
+            label_folder = os.path.join(audio_path, label)
+            if os.path.isdir(label_folder):
+                for audio_file in os.listdir(label_folder):
+                    audio_path = os.path.join(label_folder, audio_file) #es: audio/happy/file1.wav
+                    try:
+                        # Load and preprocess audio, Extract Mel spectrogram features and Save the spectrogram as an image with the same name as the audio file
+                        preproc.audio_to_spectrogram_img(audio_path, label)
+                        print(f"Saved spectrogram for {label}: {audio_file}")
+                    except Exception as e:
+                        print(f"Error processing {audio_path}: {e}")
 
 def get_audio_from_mp4(filepath):
 

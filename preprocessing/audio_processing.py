@@ -5,11 +5,10 @@ from moviepy.editor import *
 from pathlib import Path
 import matplotlib
 import matplotlib.pyplot as plt
+import tensorflow as tf
 from config import SAMPLING_RATE, MIN_AUDIO_LEN, MAX_AUDIO_LEN, N_MELS_BAND, HOP_LENGTH
-
 class AudioProcessing:
-    def __init__(self, audio_data_path) -> None:
-        self.audio_data_path = audio_data_path
+    def __init__(self) -> None:
         self.sampling_rate = SAMPLING_RATE
         self.n_mels_band = N_MELS_BAND
         self.hop_length = HOP_LENGTH
@@ -19,7 +18,7 @@ class AudioProcessing:
 
     #TODO: vedere come funzionano e gestire i parametri relativi all audio come sample rate, hop length etc
 
-    def load_audio(self, file_path):
+    def load_and_preprocess_audio(self, audio_path):
         """
         Load and preprocess audio file: applying resampling and pad/trunc to normalize all audio
         
@@ -29,22 +28,24 @@ class AudioProcessing:
         Returns:
             np.ndarray: Audio time-series array.
         """
-        audio, sr = librosa.load(file_path, sr=None) #load audio with original sampling rate
+        audio, sr = librosa.load(audio_path, sr=None) #load audio with original sampling rate
         print(f"Loaded audio min: {audio.min()}, max: {audio.max()}; Sample Rate: {sr}")
         #resample to target rate for normalize all audio
         if sr != self.sampling_rate:
-            audio = librosa.resample(audio, orig_sr=sr, target_sr=self.sampling_rate)
+            fix_audio = librosa.resample(audio, orig_sr=sr, target_sr=self.sampling_rate)
             print(f"Sample Rate after resample: {sr}")
+        #TODO: aggiungere taglio parte silenzio?
+        #fix_audio, index = librosa.effects.trim(audio, top_db = 30)
 
         if len(audio) == 0:
             raise ValueError("Audio data is empty")
-        # cut or pad the audio to a fixed length TODO DA TESTARE
+        # cut or pad the audio to a fixed length TODO DA TESTARE e vedere se confermare
         if len(audio) < MIN_AUDIO_LEN:
-            audio = fix_length(audio, size=MAX_AUDIO_LEN*self.sampling_rate)
+            fix_audio = fix_length(audio, size=MAX_AUDIO_LEN*self.sampling_rate)
         if len(audio) > MAX_AUDIO_LEN:
-            audio = fix_length(audio, size=MAX_AUDIO_LEN*self.sampling_rate)
+            fix_audio = fix_length(audio, size=MAX_AUDIO_LEN*self.sampling_rate)
         
-        return audio, sr
+        return fix_audio, sr
     
     def extract_feature(self, audio_data):
         """
@@ -54,7 +55,7 @@ class AudioProcessing:
 
         Returns: np.ndarray: Mel spectrogram.
         """        
-        mel_features = librosa.feature.melspectrogram(y=audio_data, sr=self.sampling_rate, hop_length=self.hop_length)
+        mel_features = librosa.feature.melspectrogram(y=audio_data, sr=self.sampling_rate, hop_length=self.hop_length, n_mels=self.n_mels_band)
         mel_spec_db = librosa.power_to_db(mel_features, ref=np.max) #convert to decibel
 
         if mel_features.max() == 0:
@@ -64,7 +65,7 @@ class AudioProcessing:
         
         return mel_spec_db
     
-    def audio_to_spectrogram(self, audio_path, label):
+    def audio_to_spectrogram_img(self, audio_path, label):
         """
         Converte un file audio in un spettrogramma e lo salva come img.
         
@@ -78,7 +79,7 @@ class AudioProcessing:
         # Create subfolder for the label if it doesn't exist
         spec_label_folder.mkdir(parents=True, exist_ok=True) # => spectrogram/label/
 
-        y, sr = self.load_audio(audio_file_path)
+        y, sr = self.load_and_preprocess_audio(audio_file_path)
         file_name = os.path.splitext(os.path.basename(audio_path))[0] # pick the same name file
         
         # Genera lo spettrogramma
@@ -97,55 +98,28 @@ class AudioProcessing:
         plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
         plt.close()
     
-    def generate_mel_spectrogram(self, spec_path='data/speech/spectrogram'):
-        """metodo per generare le immagini spettogrammi dei file audio (vengono eseguito step 1 e 2 descritti qui):
-        1 - carico i file audio e li pre elaboro
-        2 - genero i spettogrammi e li salvo in una cartella divisi per label
-        3 - passaggio da fare manualmente, controllare i spettogrammi buoni e filtrare quelli non rumorosi e non buoni
-        4- una volta fatto 3 passaggio, si carica le immagini e le si preparano per essere date in input al modello (questo é fatto con un altro metodo o classe)
+    def create_spectrogram_dataset(self, audio_path: str): #TODO: CAPIRE SE USARE QUESTO CHE E OK, OPPURE FARNE UN ALTRO DOVE SI PRENDE IN INPUT LE IMMAGINI DEI SPETTOGRAMMI
         """
-        #TODO: SISTEMARE PATH LIB QUI AL POSTO DI OS LIB
-        # check se esiste path di destinazione
-        spec_path.mkdir(parents=True, exist_ok=True) # => spectrogram/label/
-
-        for label in os.listdir(self.audio_data_path):
-            label_folder = os.path.join(self.audio_data_path, label)
-            if os.path.isdir(label_folder):
-                for audio_file in os.listdir(label_folder):
-                    audio_path = os.path.join(label_folder, audio_file) #es: audio/happy/file1.wav
-                    try:
-                        # Load and preprocess audio, Extract Mel spectrogram features and Save the spectrogram as an image with the same name as the audio file
-                        self.audio_to_spectrogram(audio_path, label)
-                        print(f"Saved spectrogram for {label}: {audio_file}")
-                    except Exception as e:
-                        print(f"Error processing {audio_path}: {e}")
-    
-    '''def get_feature(self, path, duration, offset):
-        data, sr = librosa.load(path, duration=duration, offset=offset)
-        features = [self.extract_feature(data, sr)]
-
-        return np.array(features)'''
-    
-    def create_dataset(self): #TODO: REFACTOR WITH INPUT SPECTROGRAM AND NOT AUDIO FILES
-        """
-        Load all audio files from folders, extract features, and return the dataset.
+        Load all audio files from folders, extract features, and return the dataset with features and labels.
 
         Returns:
             tuple: Features and corresponding labels.
         """
         X = [] # features
         Y = [] # labels
-
-        for label in os.listdir(self.data_path): #each folder name must be the label name
-            label_folder = os.path.join(self.data_path, label)
+        target_shape = (self.n_mels_band, self.n_mels_band) # for resize to shape for CNN
+        #TODO FIXARE CON PATHLIB 
+        for label in os.listdir(audio_path): #each folder name must be the label name
+            label_folder = os.path.join(audio_path, label)
             if os.path.isdir(label_folder):
                 for audio_file in os.listdir(label_folder):
                     file_path = os.path.join(label_folder, audio_file)
                     try:
                         # Load and preprocess audio
-                        audio = self.load_audio(file_path)
+                        audio = self.load_and_preprocess_audio(file_path)
                         # Extract Mel spectrogram features
                         mel_spectrogram = self.extract_feature(audio)
+                        mel_spectrogram = tf.image.resize(np.expand_dims(mel_spectrogram, axis=-1), target_shape)
                         # Append the features and label
                         X.append(mel_spectrogram)
                         Y.append(label)
