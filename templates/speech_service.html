@@ -3,92 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Speech Classification</title>
+    <title>Multimodal Emotion Recognition WebApp</title>
     <style>
         body {
             font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .center-top {
+            position: absolute;
+            top: 5%;
             text-align: center;
-            margin: 50px;
         }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
         button {
-            padding: 10px 20px;
             font-size: 16px;
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
         }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .exit-container {
+            position: absolute;
+            bottom: 5%;
+            text-align: center;
+            width: 100%;
+        }
+        
+        input[type="text"] {
+            padding: 10px;
+            font-size: 16px;
+            width: 300px;
+            margin-right: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
         #status {
             margin-top: 20px;
+            font-size: 1.2rem;
+            color: #333;
         }
     </style>
 </head>
 <body>
 
-<h1>Speech Classification</h1>
+    <div class="center-top">
+        <h1>Speech Emotion Detection</h1>
 
-<button id="recordButton">Start Recording</button>
+        <button id="recordButton">Start Recording</button>
+        <div id="status"></div>
+    </div>
 
-<div id="status"></div>
+    <!-- Section for YouTube URL input -->
+    <div class="container">
+        <input type="text" id="youtubeUrl" placeholder="Paste YouTube video URL here">
+        <button onclick="processYouTubeUrl()">Process Video</button>
+    </div>
 
-<script>
-    const recordButton = document.getElementById('recordButton');
-    const statusDiv = document.getElementById('status');
-    let mediaRecorder;
-    let audioChunks = [];
-    const duration = 4000;  // Set the duration of recording for 5 seconds (5000 ms)
+    <!-- Section for 'Exit' button -->
+    <div class="exit-container">
+        <button onclick="navigateToRoute('')">Exit</button>
+    </div>
 
-    recordButton.addEventListener('click', () => {
-        startRecording();
-    });
+    <script>
+        const recordButton = document.getElementById('recordButton');
+        const statusDiv = document.getElementById('status');
+        let mediaRecorder;
+        let audioChunks = [];
+        const duration = 4000;  // Set the duration of recording for 4 seconds (4000 ms)
 
-    function startRecording() {
-        // Method for add taudio and for testing
-        // Ask the user for microphone access
-        navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(stream => {
-                mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.start();
-
-                statusDiv.innerHTML = "* Start Recording...";
-
-                // Store audio data as it comes in
-                mediaRecorder.ondataavailable = event => {
-                    audioChunks.push(event.data);
-                };
-
-                // Stop the recording after the set duration
-                setTimeout(() => {
-                    mediaRecorder.stop();
-                    statusDiv.innerHTML = "Recording stopped.";
-                }, duration);
-
-                // When the recording stops, send the audio to the server
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                    sendAudioToServer(audioBlob);
-                    audioChunks = [];  // Clear the chunks for the next recording
-                };
-            })
-            .catch(err => {
-                console.error('The following error occurred: ' + err);
-            });
-    }
-
-    function sendAudioToServer(audioBlob) {
-        const formData = new FormData();
-        formData.append('audio', audioBlob, 'audio.wav');
-
-        fetch('http://127.0.0.1:5000/predict-audio', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            const predictedLabel = data.predicted_label;
-            statusDiv.innerHTML = `Predicted Label: ${predictedLabel}`;
-        })
-        .catch(error => {
-            statusDiv.innerHTML = `Error: ${error}`;
+        recordButton.addEventListener('click', () => {
+            startRecording();
         });
-    }
-</script>
 
+        function startRecording() {
+            // Method for adding audio and testing
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.start();
+
+                    statusDiv.innerHTML = "* Start Recording... ";
+
+                    // Store audio data
+                    mediaRecorder.ondataavailable = event => {
+                        audioChunks.push(event.data);
+                    };
+
+                    // Stop recording after the set duration
+                    setTimeout(() => {
+                        mediaRecorder.stop();
+                        statusDiv.innerHTML = "* Stop recording ... ";
+                    }, duration);
+
+                    // Send the recorded audio to the server
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        sendAudioToServer(audioBlob);
+                        audioChunks = [];  // Clear chunks for the next recording
+                    };
+                })
+                .catch(err => {
+                    console.error('Error: ' + err);
+                });
+        }
+
+        function sendAudioToServer(audioBlob) {
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'audio.wav');
+
+            fetch('http://127.0.0.1:5000/predict-audio', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const predictedLabel = data.predicted_label;
+                statusDiv.innerHTML = `Predicted Label: ${predictedLabel}`;
+            })
+            .catch(error => {
+                statusDiv.innerHTML = `Error: ${error}`;
+            });
+        }
+
+        // Function to send YouTube URL to server
+        function processYouTubeUrl() {
+            const youtubeUrl = document.getElementById('youtubeUrl').value;
+            
+            if (!youtubeUrl) {
+                alert('Please enter a YouTube video URL.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('youtubeUrl', youtubeUrl);
+
+            fetch('http://127.0.0.1:5000/process-youtube-video', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                statusDiv.innerHTML = `Video Processing: ${data.message}`;
+            })
+            .catch(error => {
+                statusDiv.innerHTML = `Error: ${error}`;
+            });
+        }
+
+        function navigateToRoute(route) {
+            const baseURL = 'http://127.0.0.1:5000/';
+            window.location.href = baseURL + route;
+        }
+    </script>
 </body>
 </html>

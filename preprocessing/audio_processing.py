@@ -47,15 +47,12 @@ class AudioProcessing:
         
         return fix_audio, sr
     
-    def extract_feature(self, audio_data):
+    def get_feature(self, audio_data):
         """
         Extract Mel spectrogram as feature from audio data.
-
-        Args: audio (np.ndarray): Audio time-series array.
-
         Returns: np.ndarray: Mel spectrogram.
         """        
-        mel_features = librosa.feature.melspectrogram(y=audio_data, sr=self.sampling_rate, hop_length=self.hop_length, n_mels=self.n_mels_band)
+        mel_features = librosa.feature.melspectrogram(y=audio_data, sr=self.sampling_rate, hop_length=self.hop_length)
         mel_spec_db = librosa.power_to_db(mel_features, ref=np.max) #convert to decibel
 
         if mel_features.max() == 0:
@@ -118,7 +115,7 @@ class AudioProcessing:
                         # Load and preprocess audio
                         audio = self.load_and_preprocess_audio(file_path)
                         # Extract Mel spectrogram features
-                        mel_spectrogram = self.extract_feature(audio)
+                        mel_spectrogram = self.get_feature(audio)
                         mel_spectrogram = tf.image.resize(np.expand_dims(mel_spectrogram, axis=-1), target_shape)
                         # Append the features and label
                         X.append(mel_spectrogram)

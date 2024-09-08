@@ -1,13 +1,17 @@
 from keras.api.models import load_model
-from config import LABELS, LABELS_DICT, SAMPLING_RATE
+from config import LABELS, LABELS_DICT, SAMPLING_RATE, N_MELS_BAND
 from preprocessing.audio_processing import AudioProcessing
 import pyaudio, wave
+import tensorflow as tf
+import numpy as np
+from io import BytesIO
 
-class speechEmotionPredictor:
+class SpeechEmotionService:
     def __init__(self, model_path: str) -> None:
         self.audio_preproc = AudioProcessing()
         self.model = load_model(model_path)
         self.labels = LABELS
+        self.n_mels = N_MELS_BAND
         self.chunk_audio = 512
         self.channels = 1
         self.rate_audio = SAMPLING_RATE
@@ -57,24 +61,25 @@ class speechEmotionPredictor:
     def preprocess_audio(self, audio):
 
         fix_audio, sr = self.audio_preproc.load_and_preprocess_audio(audio_path=audio)
-        mel_spectrogram = self.audio_preproc.extract_feature(fix_audio)
-        return
+        mel_spectrogram = self.audio_preproc.get_feature(fix_audio)
+
+        target_shape = (self.n_mels, self.n_mels)
+        mel_spectrogram = tf.image.resize(np.expand_dims(mel_spectrogram, axis=-1), target_shape)
+        mel_spectrogram = tf.reshape(mel_spectrogram, (1,) + target_shape + (1,))
+
+        return mel_spectrogram
     
-    def predict(self):
-        speech_model = speechEmotionPredictor('path_to_speech_models.keras')
-
-        if 'audio' not in request.files:
-            return jsonify({'error': 'No audio file uploaded'}), 400
-
-        # Get the audio file from the request
-        audio_file = request.files['audio']
-        
+    def predict(self, audio):
+        preproc = AudioProcessing()
+        target_shape = (self.n_mels, self.n_mels)
         # Read the audio file as a byte stream and convert it into a numpy array
-        audio, sr = librosa.load(BytesIO(audio_file.read()), sr=speech_model.rate_audio)
-        
-        # Preprocess and classify the audio
-        fix_audio = speech_model.(audio)
-        mel_spectrogram = service.convert_to_mel_spectrogram(preprocessed_audio)
-        label = service.predict_label(mel_spectrogram)
+        fix_audio, sr = preproc.load_and_preprocess_audio(BytesIO(audio.read()))
+        # get spectrogram
+        mel_spectrogram = preproc.get_feature(fix_audio)
+        mel_spectrogram = tf.image.resize(np.expand_dims(mel_spectrogram, axis=-1), target_shape)
+        mel_spectrogram = tf.reshape(mel_spectrogram, (1,) + target_shape + (1,))
+        prediction = self.model.predict(mel_spectrogram)[0]
+        emotion = self.labels[np.argmax(prediction)]
+        print(f'Speech emotion detected: {emotion}')
 
-        return jsonify({'predicted_label': int(label)})
+        return emotion

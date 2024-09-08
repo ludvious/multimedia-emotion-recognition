@@ -2,7 +2,7 @@
 
 
 #### run applicazione
-``flask -app app run``
+``flask --app app run``
 
 
 
@@ -11,6 +11,7 @@
 
 ## aggiornamenti TODO
 
+- fixare webcam accensione con pulsante
 - ~~Web app installata  e funzionante su server locale, altrimenti saremmo dipendenti dal sistema operativo~~.
 - ~~La app dovrà essere funzionante in real time, poi dipende dal dato... Per riconoscere un volto, dovrà vedere il volto e riconoscerlo~~.
 - Se mi fai un pulsante per caricare degli esempi di foto da disco e mi mostri che li riconosce come esempio di precisione (perché ci sta che riconosca meglio un volto di un altro) va bene
@@ -19,7 +20,7 @@
 - fare dataset speech emotion: Per la raccolta dati, usa direttamente la label nella ricerca dei video (ad esempio "Joy"). Se trovi troppi video non correnti, raffina la ricerca (joyful girl, laughing man...), poi selezioni le clip funzionali: il modo più rapido è trasformarle in immagini (lo sono già, in numero pari alla frequenza.... un girato a 1/30 avrà 30 immagini al secondo) e selezioni e butti quelle che non ti sembrano buone o hanno rumore. Dal sistema operativo, mettendo la visualizzazione con icone grandi, si fa al volo col mouse. Questo per.ogni video, per ogni emozione del modello, finché non hai un numero adeguato (possibilmente ma non necessariamente bilanciato tra classi).
 - ~~implementare il preprocessing per audio e per generare spettrogrammi e dataset ~~  (manca da testarlo)
 - ~~definire modello per speech emotion~~, poi fare training ecc
-- implementare il servizio nell app
+- ~~implementare il servizio di speech emotion nell app~~
 
 - upgrade face recognition model: provare minix piu grande e vedere se funziona (anche con augmentation):
     - ~~provare augmentation con tensorflow image e vedere se cambia qualcosa sull allenamento con il modello delle facce~~

@@ -18,7 +18,8 @@
             text-align: center;
         }
         .video-container {
-            margin-bottom: 20px; /* Spazio tra il video e il pulsante */
+            margin-bottom: 20px;
+            display: none; /* Initially hide the video */
         }
         button {
             font-size: 16px;
@@ -42,22 +43,39 @@
     <h1 class="w3-jumbo w3-animate-top">Face Emotion&nbsp;Detection</h1>
     <hr class="w3-border-grey" style="margin:auto;width:70%">
     <br>
-    <div class="video-container">
-      <p style="text-align:center;">
-        <img src="{{ url_for('video_feed') }}" width="95%">
-      </p>
-    </div>
+    
     <div class="container">
+      <button onclick="toggleVideoFeed()" id="toggle-btn">Start</button> <!-- Toggle button -->
       <button onclick="navigateToRoute('')">Exit</button>
+    </div>
+
+    <div class="video-container" id="video-container"> <!-- Add an ID for easy access -->
+      <p style="text-align:center;">
+        <img src="{{ url_for('video_feed') }}" width="95%" id="video-feed">
+      </p>
     </div>
   </div>
 </div>
 
 <script>
     function navigateToRoute(route) {
-        // Sostituisci con l'URL delle tue rotte
         const baseURL = 'http://127.0.0.1:5000/';
         window.location.href = baseURL + route;
+    }
+
+    function toggleVideoFeed() {
+        const videoContainer = document.getElementById('video-container');
+        const toggleButton = document.getElementById('toggle-btn');
+
+        if (videoContainer.style.display === 'none' || videoContainer.style.display === '') {
+            // Start the video feed
+            videoContainer.style.display = 'block';
+            toggleButton.innerText = 'Stop';
+        } else {
+            // Stop the video feed
+            videoContainer.style.display = 'none';
+            toggleButton.innerText = 'Start';
+        }
     }
 </script>
 

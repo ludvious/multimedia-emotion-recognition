@@ -1,11 +1,8 @@
 from flask import Flask, render_template, Response, request, jsonify
-import librosa, os
-from io import BytesIO
 from services.face_emotion_service import FaceEmotionService
-from services.speech_emotion_service import speechEmotionPredictor
-from preprocessing.audio_processing import AudioProcessing
+from services.speech_emotion_service import SpeechEmotionService
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates')
 
 @app.route('/')
 def index():
@@ -36,7 +33,18 @@ def video_feed():
 
 @app.route('/predict-audio', methods=['POST'])
 def predict_audio():
-    return
+    if 'audio' not in request.files:
+        return Response(jsonify({'error': 'No audio file uploaded'}), status=400, mimetype='application/json')
+    
+    model_path = 'path_to_speech_model.keras'
+    speech_service = SpeechEmotionService(model_path)
+    try:
+        # Get the audio file from the request
+        audio = request.files['audio']
+        emotion = speech_service.predict(audio)
+        return Response(jsonify({'Speech emotion detected': emotion}), status=200, mimetype='application/json')
+    except Exception as e:
+        return Response(jsonify({'error': str(e)}), status=500, mimetype='application/json')
 
 if __name__ == '__main__':
     app.run(debug=True)

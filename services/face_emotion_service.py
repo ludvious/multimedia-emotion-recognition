@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 from keras.api.models import load_model
 from keras.api.preprocessing.image import img_to_array
-import os
 from config import LABELS, TF_ENABLE_ONEDNN_OPTS
 
 class FaceEmotionService:
