@@ -14,31 +14,6 @@ def add_folders(start_path, labels):
         label_folder = os.path.join(start_path, label)
         os.makedirs(label_folder)
 
-def gen_mel_spectrogram_dataset(audio_path: str, spec_path: str):
-        """metodo per generare le immagini spettogrammi dei file audio e salvarle(vengono eseguito step 1 e 2 descritti qui):
-        1 - carico i file audio e li pre elaboro
-        2 - genero i spettogrammi e li salvo in una cartella divisi per label
-        3 - passaggio da fare manualmente, controllare i spettogrammi buoni e filtrare quelli non rumorosi e non buoni
-        4- una volta fatto 3 passaggio, si carica le immagini e le si preparano per essere date in input al modello (questo é fatto con un altro metodo o classe)
-        """
-        #spec_path = 'data/speech/spectrogram'
-        preproc = AudioProcessing(audio_path=audio_path)
-        #TODO: SISTEMARE PATH LIB QUI AL POSTO DI OS LIB
-        # check se esiste path di destinazione
-        spec_path.mkdir(parents=True, exist_ok=True) # => spectrogram/label/
-
-        for label in os.listdir(audio_path):
-            label_folder = os.path.join(audio_path, label)
-            if os.path.isdir(label_folder):
-                for audio_file in os.listdir(label_folder):
-                    audio_path = os.path.join(label_folder, audio_file) #es: audio/happy/file1.wav
-                    try:
-                        # Load and preprocess audio, Extract Mel spectrogram features and Save the spectrogram as an image with the same name as the audio file
-                        preproc.audio_to_spectrogram_img(audio_path, label)
-                        print(f"Saved spectrogram for {label}: {audio_file}")
-                    except Exception as e:
-                        print(f"Error processing {audio_path}: {e}")
-
 def get_audio_from_mp4(filepath):
 
     files = os.listdir(filepath)
@@ -56,7 +31,6 @@ def get_audio_from_yt(youtube_url):
     y = YouTube(youtube_url)
     t = y.streams.filter(only_audio=True).all()
     t[0].download(output_path="../VideoFiles")
-
 
 def plot_spec(audio_data, sr, name):
     """stampa a video lo spettogramma e lo salva come immagine

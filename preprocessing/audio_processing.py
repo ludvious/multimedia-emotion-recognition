@@ -7,6 +7,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from config import SAMPLING_RATE, MIN_AUDIO_LEN, MAX_AUDIO_LEN, N_MELS_BAND, HOP_LENGTH
+
+
 class AudioProcessing:
     def __init__(self) -> None:
         self.sampling_rate = SAMPLING_RATE
@@ -80,7 +82,7 @@ class AudioProcessing:
         file_name = os.path.splitext(os.path.basename(audio_path))[0] # pick the same name file
         
         # Genera lo spettrogramma
-        spec_db = self.extract_feature(audio_data=y)
+        spec_db = self.get_feature(audio_data=y)
         
         # Salva lo spettrogramma come immagine
         matplotlib.use('TkAgg',force=True)
@@ -94,8 +96,29 @@ class AudioProcessing:
         output_path = spec_label_folder / f'{file_name}.png'
         plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
         plt.close()
+
+    def gen_mel_spectrogram_dataset(self, audio_file_path: str):
+        """metodo per generare le immagini spettogrammi dei file audio e salvarle(vengono eseguito step 1 e 2 descritti qui):
+        1 - carico i file audio e li pre elaboro
+        2 - genero i spettogrammi e li salvo in una cartella divisi per label
+        3 - passaggio da fare manualmente, controllare i spettogrammi buoni e filtrare quelli non rumorosi e non buoni
+        """
+        audio_path = Path(audio_file_path)
+        spec_path = Path('data/speech/spectrogram')
+        spec_path.mkdir(parents=True, exist_ok=True) # => spectrogram/label/
+
+        for label in audio_path.iterdir():
+            if label.is_dir():
+                for audio_file in label.iterdir():
+                    audio_path = audio_file
+                    try:
+                        # Load and preprocess audio, Extract Mel spectrogram features and Save the spectrogram as an image with the same name as the audio file
+                        self.audio_to_spectrogram_img(audio_path, label.name)
+                        print(f"Saved spectrogram for {label.name}: {audio_file.name}")
+                    except Exception as e:
+                        print(f"Error processing {audio_path}: {e}")
     
-    def create_spectrogram_dataset(self, audio_path: str): #TODO: CAPIRE SE USARE QUESTO CHE E OK, OPPURE FARNE UN ALTRO DOVE SI PRENDE IN INPUT LE IMMAGINI DEI SPETTOGRAMMI
+    def create_dataset(self, audio_path: str): #TODO: CAPIRE SE USARE QUESTO CHE E OK, OPPURE FARNE UN ALTRO DOVE SI PRENDE IN INPUT LE IMMAGINI DEI SPETTOGRAMMI
         """
         Load all audio files from folders, extract features, and return the dataset with features and labels.
 
