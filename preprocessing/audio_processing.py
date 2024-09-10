@@ -118,7 +118,7 @@ class AudioProcessing:
                     except Exception as e:
                         print(f"Error processing {audio_path}: {e}")
     
-    def create_dataset(self, audio_path: str): #TODO: CAPIRE SE USARE QUESTO CHE E OK, OPPURE FARNE UN ALTRO DOVE SI PRENDE IN INPUT LE IMMAGINI DEI SPETTOGRAMMI
+    def create_dataset(self, audio_file_path: str):
         """
         Load all audio files from folders, extract features, and return the dataset with features and labels.
 
@@ -127,13 +127,14 @@ class AudioProcessing:
         """
         X = [] # features
         Y = [] # labels
-        target_shape = (self.n_mels_band, self.n_mels_band) # for resize to shape for CNN
+        target_shape = (self.n_mels_band, self.n_mels_band) # for resize to shape for CNN 128x128
+
+        audio_path = Path(audio_file_path)
         #TODO FIXARE CON PATHLIB 
-        for label in os.listdir(audio_path): #each folder name must be the label name
-            label_folder = os.path.join(audio_path, label)
-            if os.path.isdir(label_folder):
-                for audio_file in os.listdir(label_folder):
-                    file_path = os.path.join(label_folder, audio_file)
+        for label in audio_path.iterdir(): #each folder name must be the label name
+            if label.is_dir():
+                for audio_file in label.iterdir():
+                    file_path = audio_file
                     try:
                         # Load and preprocess audio
                         audio = self.load_and_preprocess_audio(file_path)
