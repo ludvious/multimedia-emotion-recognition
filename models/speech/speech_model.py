@@ -1,5 +1,5 @@
 from keras.api.models import Sequential, Model
-from keras.api.layers import Input, Conv2D, MaxPooling2D, SeparableConv2D, BatchNormalization, Activation, GlobalAveragePooling2D
+from keras.api.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense
 from keras.api.regularizers import l2
 from keras.api import layers
 from keras.api.layers import Resizing
@@ -79,3 +79,18 @@ class AlexNetCNN:
         plt.ylabel('Loss')
         plt.legend()
         plt.show()
+    
+    def _create_model_cnn(self, X_train):
+
+        input_shape = X_train[0].shape
+        input_layer = Input(shape=input_shape)
+        x = Conv2D(32, (3, 3), activation='relu')(input_layer)
+        x = MaxPooling2D((2, 2))(x)
+        x = Conv2D(64, (3, 3), activation='relu')(x)
+        x = MaxPooling2D((2, 2))(x)
+        x = Flatten()(x)
+        x = Dense(64, activation='relu')(x)
+        output_layer = Dense(self.num_classes, activation='softmax')(x)
+        model = Model(input_layer, output_layer)
+
+        return model
