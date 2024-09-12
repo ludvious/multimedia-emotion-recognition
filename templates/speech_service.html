@@ -69,15 +69,8 @@
     <div class="center-container">
         <h1>Speech Emotion Detection</h1>
 
-        <button id="recordButton">Start Recording</button>
+        <button id="toggleRecording">Start Recording</button>
         <div id="status"></div>
-
-        <!-- Uncomment if using YouTube input
-        <div class="container">
-            <input type="text" id="youtubeUrl" placeholder="Paste YouTube video URL here">
-            <button onclick="processYouTubeUrl()">Process Video</button>
-        </div>
-        -->
 
         <button onclick="navigateToRoute('')">Load audio</button>
 
@@ -87,85 +80,84 @@
     </div>
 
     <script>
-        const recordButton = document.getElementById('recordButton');
+        const toggleButton = document.getElementById('toggleRecording');
         const statusDiv = document.getElementById('status');
         let mediaRecorder;
         let audioChunks = [];
-        const duration = 4000;  // Set the duration of recording for 4 seconds (4000 ms)
+        const duration = 1000;  // Set the duration of recording for 2 seconds (2000 ms)
+        let isRecording = false;
+        let recordingInterval;
 
-        recordButton.addEventListener('click', () => {
-            startRecording();
-        });
+        toggleButton.onclick = async () => {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                await startRecording();
+            }
+        };
 
-        function startRecording() {
-            // Method for adding audio and testing
-            navigator.mediaDevices.getUserMedia({ audio: true })
-                .then(stream => {
-                    mediaRecorder = new MediaRecorder(stream);
-                    mediaRecorder.start();
+        async function startRecording() {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
 
-                    statusDiv.innerHTML = "* Start Recording... ";
+            mediaRecorder.ondataavailable = (event) => {
+                audioChunks.push(event.data);
+            };
 
-                    // Store audio data
-                    mediaRecorder.ondataavailable = event => {
-                        audioChunks.push(event.data);
-                    };
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                sendAudioToServer(audioBlob);
+                audioChunks = [];
+            };
 
-                    // Stop recording after the set duration
-                    setTimeout(() => {
-                        mediaRecorder.stop();
-                        statusDiv.innerHTML = "* Stop recording ... ";
-                    }, duration);
+            isRecording = true;
+            toggleButton.textContent = 'Stop Recording';
+            statusDiv.textContent = 'Preparing to record...';
 
-                    // Send the recorded audio to the server
-                    mediaRecorder.onstop = () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                        sendAudioToServer(audioBlob);
-                        audioChunks = [];  // Clear chunks for the next recording
-                    };
-                })
-                .catch(err => {
-                    console.error('Error: ' + err);
-                });
+            // Delay for consent
+            setTimeout(() => {
+                statusDiv.textContent = 'Recording in progress...';
+                recordPeriodically();
+            }, 0);  // 1 second delay
         }
+
+        function stopRecording() {
+            isRecording = false;
+            clearInterval(recordingInterval);
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            toggleButton.textContent = 'Start Recording';
+            statusDiv.textContent = 'Recording stopped';
+        }
+
+        function recordPeriodically() {
+            recordingInterval = setInterval(() => {
+                if (mediaRecorder.state === 'inactive') {
+                    mediaRecorder.start();
+                    setTimeout(() => {
+                        if (mediaRecorder.state === 'recording') {
+                            mediaRecorder.stop();
+                        }
+                    }, duration);  // Record for 2 seconds
+                }
+            }, duration);  // Start a new recording every 2 seconds
+        }
+
+        
 
         function sendAudioToServer(audioBlob) {
             const formData = new FormData();
             formData.append('audio', audioBlob, 'audio.wav');
 
-            fetch('http://127.0.0.1:5000/predict-audio', {
+            fetch('http://127.0.0.1:5000/process-audio', {
                 method: 'POST',
                 body: formData
             })
             .then(response => response.json())
             .then(data => {
                 const predictedLabel = data.predicted_label;
-                statusDiv.innerHTML = `Predicted Label: ${predictedLabel}`;
-            })
-            .catch(error => {
-                statusDiv.innerHTML = `Error: ${error}`;
-            });
-        }
-
-        // Function to send YouTube URL to server
-        function processYouTubeUrl() {
-            const youtubeUrl = document.getElementById('youtubeUrl').value;
-            
-            if (!youtubeUrl) {
-                alert('Please enter a YouTube video URL.');
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('youtubeUrl', youtubeUrl);
-
-            fetch('http://127.0.0.1:5000/process-youtube-video', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                statusDiv.innerHTML = `Video Processing: ${data.message}`;
+                statusDiv.innerHTML = `Emotion: ${predictedLabel}`;
             })
             .catch(error => {
                 statusDiv.innerHTML = `Error: ${error}`;
