@@ -30,13 +30,15 @@ class FaceEmotionService:
                 roi_gray = roi_gray.astype('float') / 255.0
                 roi_gray = img_to_array(roi_gray)
                 roi_gray = np.expand_dims(roi_gray, axis=0)
-                #roi_gray = np.expand_dims(roi_gray, axis=-1)
+                roi_gray = np.expand_dims(roi_gray, axis=-1)
 
                 prediction = self.model.predict(roi_gray)[0]
                 emotion = self.labels[np.argmax(prediction)]
-                print(f'Face emotion detected: {emotion}')
-
-                cv2.putText(frame, emotion, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                perc = round((max(prediction)*100), 1)
+                print(f'Face emotion detected: {emotion} %{perc}')
+                cvtext = f'{emotion} %{perc}'
+                if perc > 60:
+                    cv2.putText(frame, cvtext, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
             else:
                 cv2.putText(frame, 'No Emotion Detected', (x, y - 10), cv2.FONT_HERSHEY_COMPLEX, 0.9, (0, 255, 0), 2)
         
