@@ -4,7 +4,6 @@ import numpy as np
 from moviepy.editor import *
 from pathlib import Path
 import matplotlib
-import matplotlib.pyplot as plt
 import tensorflow as tf
 from config import SAMPLING_RATE, MIN_AUDIO_LEN, MAX_AUDIO_LEN, N_MELS_BAND, HOP_LENGTH
 
@@ -20,7 +19,7 @@ class AudioProcessing:
 
     #TODO: vedere come funzionano e gestire i parametri relativi all audio come sample rate, hop length etc
 
-    def load_and_preprocess_audio(self, audio_path):
+    def load_audio(self, audio_path):
         """
         Load and preprocess audio file: applying resampling and pad/trunc to normalize all audio
         
@@ -49,22 +48,23 @@ class AudioProcessing:
         
         return fix_audio, sr
     
-    def get_feature(self, audio_data):
+    def get_spectrogram(self, audio_data):
         """
         Extract Mel spectrogram as feature from audio data.
         Returns: np.ndarray: Mel spectrogram.
         """        
-        mel_features = librosa.feature.melspectrogram(y=audio_data, sr=self.sampling_rate, hop_length=self.hop_length)
+        mel_features = librosa.feature.melspectrogram(y=audio_data, sr=self.sampling_rate, hop_length=self.hop_length, n_mels=self.n_mels_band)
         mel_spec_db = librosa.power_to_db(mel_features, ref=np.max) #convert to decibel
-
+        normalized_spectrogram = (mel_spec_db - mel_spec_db.min()) / (mel_spec_db.max() - mel_spec_db.min())
+        resized_spectrogram = resize(normalized_spectrogram, (128,128), mode='reflect', anti_aliasing=True)
         if mel_features.max() == 0:
             raise ValueError("Mel spectrogram contains only zeros.")
         if mel_spec_db.shape[1] == 0:
             raise ValueError("Invalid spectrogram shape")
-        
-        return mel_spec_db
+
+        return resized_spectrogram
     
-    def audio_to_spectrogram_img(self, audio_path, label):
+    def audio_to_spectrogram_img(self, audio_path, label, save_img=True):
         """
         Converte un file audio in un spettrogramma e lo salva come img.
         
@@ -78,24 +78,14 @@ class AudioProcessing:
         # Create subfolder for the label if it doesn't exist
         spec_label_folder.mkdir(parents=True, exist_ok=True) # => spectrogram/label/
 
-        y, sr = self.load_and_preprocess_audio(audio_file_path)
+        y, sr = self.load_audio(audio_file_path)
         file_name = os.path.splitext(os.path.basename(audio_path))[0] # pick the same name file
-        
         # Genera lo spettrogramma
-        spec_db = self.get_feature(audio_data=y)
-        
-        # Salva lo spettrogramma come immagine
-        matplotlib.use('TkAgg',force=True)
-        plt.figure(figsize=(10, 4))
-        librosa.display.specshow(spec_db, sr=sr, x_axis='time', y_axis='mel')
-        #plt.colorbar(format='%+2.0f dB')
-        #plt.title(f'Mel Spectrogram ({label})')
-        plt.axis('off')
-        #plt.tight_layout(pad=0)
-        # Save image to label folder with .png extension
-        output_path = spec_label_folder / f'{file_name}.png'
-        plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
-        plt.close()
+        spec = self.get_spectrogram(audio_data=y)
+        if save_img:
+            # Salva lo spettrogramma come immagine
+            output_path = spec_label_folder / f'{file_name}.png'
+            matplotlib.image.imsave(output_path, spec)
 
     def gen_mel_spectrogram_dataset(self, audio_file_path: str):
         """metodo per generare le immagini spettogrammi dei file audio e salvarle(vengono eseguito step 1 e 2 descritti qui):
@@ -137,12 +127,12 @@ class AudioProcessing:
                     file_path = audio_file
                     try:
                         # Load and preprocess audio
-                        audio = self.load_and_preprocess_audio(file_path)
+                        audio = self.load_audio(file_path)
                         # Extract Mel spectrogram features
-                        mel_spectrogram = self.get_feature(audio)
-                        mel_spectrogram = tf.image.resize(np.expand_dims(mel_spectrogram, axis=-1), target_shape)
+                        mel_spectrogram = self.get_spectrogram(audio)
+                        feature = np.expand_dims(mel_spectrogram, axis=-1)
                         # Append the features and label
-                        X.append(mel_spectrogram)
+                        X.append(feature)
                         Y.append(label)
                     except Exception as e:
                         print(f"Error processing {file_path}: {e}")
