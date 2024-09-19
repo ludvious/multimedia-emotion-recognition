@@ -1,5 +1,5 @@
 from keras.api.models import Sequential, Model
-from keras.api.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense
+from keras.api.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from keras.api.regularizers import l2
 from keras.api import layers
 from keras.api.layers import Resizing
@@ -84,8 +84,12 @@ class AlexNetCNN:
 
         input_shape = X_train[0].shape
         input_layer = Input(shape=input_shape)
+        x = Conv2D(16, (3, 3), activation='relu')(input_layer)
+        x = MaxPooling2D((2, 2))(x)
+        x = Dropout(0.2)(x)
         x = Conv2D(32, (3, 3), activation='relu')(input_layer)
         x = MaxPooling2D((2, 2))(x)
+        x = Dropout(0.2)(x)
         x = Conv2D(64, (3, 3), activation='relu')(x)
         x = MaxPooling2D((2, 2))(x)
         x = Flatten()(x)
