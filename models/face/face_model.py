@@ -1,20 +1,30 @@
 from keras.api.models import Model
-from keras.api.layers import Input, Conv2D, MaxPooling2D, SeparableConv2D, BatchNormalization, Activation, GlobalAveragePooling2D
+from keras.api.layers import Input, Conv2D, MaxPooling2D, SeparableConv2D, BatchNormalization, Activation, GlobalAveragePooling2D, Dropout, Flatten, Dense
 from keras.api.regularizers import l2
 from keras.api import layers
 from keras.api.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from preprocessing.face_processing import prepocess_face_dataset
 import matplotlib.pyplot as plt
 from config import NUM_LABELS
+from keras._tf_keras.keras.preprocessing.image import ImageDataGenerator
 
-class ModelMiniXception:
-    def __init__(self, input_shape, batch_size: int) -> None:
+class FaceModel:
+    def __init__(self, model_name, input_shape, batch_size: int) -> None:
+        self.model_name = model_name
         self.num_labels = NUM_LABELS
         self.input_shape = input_shape
         self.batch_size = batch_size
         self.model = self._create_model()
 
-    def _create_model(self, l2_regularization=0.01):
+    def _create_model(self):
+        if self.model_name == 'mini_xception':
+            model = self._create_model_minixcpetion()
+        if self.model_name == 'cnn':
+            model = self._create_model_cnn()
+        
+        return model
+
+    def _create_model_minixcpetion(self, l2_regularization=0.01):
         
         regularization = l2(l2_regularization)
         
@@ -90,6 +100,52 @@ class ModelMiniXception:
         model.summary()
 
         return model
+    
+    def _create_model_cnn(self):
+        # input layer
+        inputs = Input(shape=self.input_shape)
+
+        # First convolutional block
+        x = Conv2D(32, kernel_size=(3, 3), activation='relu')(inputs)
+        x = BatchNormalization()(x)
+
+        # Second convolutional block
+        x = Conv2D(64, kernel_size=(3, 3), activation='relu')(x)
+        x = BatchNormalization()(x)
+        x = MaxPooling2D(pool_size=(2, 2))(x)
+        x = Dropout(0.25)(x)
+
+        # Third convolutional block
+        x = Conv2D(128, kernel_size=(3, 3), activation='relu')(x)
+        x = BatchNormalization()(x)
+
+        # Fourth convolutional block
+        x = Conv2D(128, kernel_size=(3, 3), activation='relu')(x)
+        x = BatchNormalization()(x)
+        x = MaxPooling2D(pool_size=(2, 2))(x)
+        x = Dropout(0.25)(x)
+
+        # Fifth convolutional block
+        x = Conv2D(256, kernel_size=(3, 3), activation='relu')(x)
+        x = BatchNormalization()(x)
+
+        # Sixth convolutional block
+        x = Conv2D(256, kernel_size=(3, 3), activation='relu')(x)
+        x = BatchNormalization()(x)
+        x = MaxPooling2D(pool_size=(2, 2))(x)
+        x = Dropout(0.25)(x)
+
+        # Flatten and fully connected layers
+        x = Flatten()(x)
+        x = Dense(256, activation='relu')(x)
+        x = BatchNormalization()(x)
+        x = Dropout(0.5)(x)
+
+        # Output layer
+        outputs = Dense(self.num_labels, activation='softmax')(x)
+
+        # Create the model
+        model = Model(inputs=inputs, outputs=outputs)
 
     def train_face_model(self, epochs=100, patience=50, verbose = 1):
             
@@ -97,9 +153,9 @@ class ModelMiniXception:
             train, validation = prepocess_face_dataset(self.input_shape, self.batch_size)
         
             # add callbacks
-            early_stop = EarlyStopping('val_loss', patience=50)
-            reduce_lr = ReduceLROnPlateau('val_loss', factor=0.1, patience=int(patience/4), verbose=1) # Reduce learning rate when a metric has stopped improving
-            checkpoint_models_path = 'models/face/mini_xception_'+'checkpoint.model.keras'
+            early_stop = EarlyStopping('val_loss', patience=10)
+            reduce_lr = ReduceLROnPlateau('val_loss', factor=0.1, patience=5, verbose=1) # Reduce learning rate when a metric has stopped improving
+            checkpoint_models_path = f'models/face/{self.model_name}'+'checkpoint.model.keras'
             model_checkpoint = ModelCheckpoint(filepath=checkpoint_models_path, monitor='val_loss', verbose=verbose, save_best_only=True)
             callbacks = [model_checkpoint, early_stop, reduce_lr]
             print(f"add callbacks ...\n")
@@ -126,10 +182,7 @@ class ModelMiniXception:
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
         plt.legend()
-        plt.show()        
-
-face_model = ModelMiniXception(num_labels=7, input_shape=(48,48,1), batch_size=32)
-face_model.train_face_model()
+        plt.show()
 
 # The model weights (that are considered the best) can be loaded as -
 # model.load_weights(checkpoint_filepath)

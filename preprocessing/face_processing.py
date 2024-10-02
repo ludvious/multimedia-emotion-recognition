@@ -1,75 +1,39 @@
-from keras.api.utils import image_dataset_from_directory
 from keras.api.models import Sequential
-from keras.api.layers import RandomFlip, RandomRotation, RandomZoom, Resizing, Rescaling, RandomTranslation, RandomBrightness, RandomContrast
+from keras.api.layers import RandomFlip, RandomRotation, RandomZoom, Rescaling, RandomContrast
 import tensorflow as tf
-import os
+from keras._tf_keras.keras.preprocessing.image import ImageDataGenerator
 
-class FaceProcessing:
-    def __init__(self) -> None:
-        pass
+def prepocess_face_dataset(self):
 
-    
-
-def prepocess_face_dataset(input_shape, batch_size):
-
-    train_dir = os.path.join('data\face\fer-2013\train')
-    val_dir = os.path.join('data\face\fer-2013\test')
-
-    train_dataset = image_dataset_from_directory(
-            directory=train_dir,
-            label_mode='categorical',
-            subset='training',
-            seed=123,
-            validation_split=0.15,
-            image_size=input_shape[:2],
-            color_mode='grayscale',
-            batch_size=batch_size
-    )
-    
-    val_dataset = image_dataset_from_directory(
-        directory=val_dir,
-        label_mode='categorical',
-        subset='validation',
-        seed=123,
-        validation_split=0.15,
-        image_size=input_shape[:2],
-        color_mode='grayscale',
-        batch_size=batch_size
+    train_datagen = ImageDataGenerator(
+        width_shift_range = 0.1,        # Randomly shift the width of images by up to 10%
+        height_shift_range = 0.1,       # Randomly shift the height of images by up to 10%
+        horizontal_flip = True,         # Flip images horizontally at random
+        rescale = 1./255,               # Rescale pixel values to be between 0 and 1
+        validation_split = 0.2          # Set aside 20% of the data for validation
     )
 
-    train_dataset = normalize_augmentation_images(dataset=train_dataset, type_dataset='train', batch_size=batch_size, augment=True)
-    val_dataset = normalize_augmentation_images(dataset=val_dataset, type_dataset='val', batch_size=batch_size, augment=False)
+    validation_datagen = ImageDataGenerator(
+        rescale = 1./255,               # Rescale pixel values to be between 0 and 1
+        validation_split = 0.2          # Set aside 20% of the data for validation
+    )
 
-    return train_dataset, val_dataset
+    train_generator = train_datagen.flow_from_directory(
+        directory = '/content/train',    # Directory containing the training data
+        target_size = self.input_shape[:2],          # Resizes all images to 48x48 pixels
+        batch_size = self.batch_size,                 # Number of images per batch
+        color_mode = "grayscale",        # Converts the images to grayscale
+        class_mode = "categorical",      # Classifies the images into 7 categories
+        subset = "training"              # Uses the training subset of the data
+    )
 
-def normalize_augmentation_images(dataset, input_shape, batch_size: int, augment=False):
-    """metodo per applicare pre-elaborazione (normalization, rescaling, augmentation, shuffle, prefetch) direttamente sui dati prima di essere data in input al modello
-    Args:
-        dataset (_type_): _description_
-        type_dataset (str): _description_
-        batch_size (int): _description_
-        augment (bool, optional): _description_. Defaults to False.
+    validation_generator = validation_datagen.flow_from_directory(
+        directory = '/content/test',     # Directory containing the validation data
+        target_size = self.input_shape[:2],          # Resizes all images to 48x48 pixels
+        batch_size = 64,                 # Number of images per batch
+        color_mode = "grayscale",        # Converts the images to grayscale
+        class_mode = "categorical",      # Classifies the images into 7 categories
+        subset = "validation"            # Uses the validation subset of the data
+    )
 
-    Returns:
-        dataset (_type_): _description_
-    """
-    # Add Rescaling layer to normalize pixel values
-    normalization_layer = Rescaling(1./255)
-    dataset = dataset.map(lambda x, y: (normalization_layer(x), y))
-
-
-    if augment==True:
-        # applicazione aumento dei dati
-        data_augmentation = Sequential([
-        RandomFlip("horizontal", input_shape=input_shape[:2]),
-        RandomRotation(0.1),
-        RandomZoom(0.05),
-        RandomContrast(0.1)
-        ])
-        dataset = dataset.map(lambda x, y: (data_augmentation(x, training=True), y))
-
-    # cache mantiene le immagini in memoria dopo che sono state caricate dal disco durante la prima epoca. Ciò garantirà che il set di dati non diventi un collo di bottiglia durante l'addestramento del modello
-    # prefetch sovrappone alla preelaborazione dei dati e all'esecuzione del modello durante l'addestramento
-    dataset = dataset.shuffle(1000)
-    
-    return dataset.cache().prefetch(buffer_size=tf.data.AUTOTUNE)
+    return train_generator, validation_generator
