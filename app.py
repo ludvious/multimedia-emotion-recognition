@@ -31,7 +31,7 @@ def start_stream(camera):
 @app.route('/video-feed')
 def video_feed():
     model_path = 'models/face/mini_xception2_checkpoint.model.keras'
-    return Response(start_stream(FaceEmotionService(model_path=model_path, index_cam=0)), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(start_stream(FaceEmotionService(model_path=model_path, index_cam=1)), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/process-audio', methods=['POST'])
 def predict_audio():
