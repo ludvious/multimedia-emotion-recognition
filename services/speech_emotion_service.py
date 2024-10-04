@@ -18,8 +18,8 @@ class SpeechEmotionService:
 
     def preprocess_audio(self, audio):
 
-        fix_audio, sr = self.audio_preproc.load_and_preprocess_audio(audio_path=audio)
-        mel_spectrogram = self.audio_preproc.get_feature(fix_audio)
+        fix_audio, sr = self.audio_preproc.load_audio(audio_path=audio)
+        mel_spectrogram = self.audio_preproc.get_spectrogram(fix_audio)
 
         target_shape = (self.n_mels, self.n_mels)
         mel_spectrogram = tf.image.resize(np.expand_dims(mel_spectrogram, axis=-1), target_shape)
@@ -28,12 +28,22 @@ class SpeechEmotionService:
         return mel_spectrogram
     
     def predict(self, audio):
-        preproc = AudioProcessing()
+        """metodo usato nell app che permette di fare la predizione dell audio registrato. Prende in input l audio, segue il processo di elaborazione;
+        l input del modello saranno spectrogrammi.
+        Infine ritorna la label.
+
+        Args:
+            audio (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+
         target_shape = (self.n_mels, self.n_mels)
-        # Read the audio file as a byte stream and convert it into a numpy array
-        fix_audio, sr = preproc.load_and_preprocess_audio(BytesIO(audio.read()))
+        # Read the audio file as a byte stream, normalize it, and convert it into a numpy array
+        fix_audio, sr = self.audio_preproc.load_audio(BytesIO(audio.read()))
         # get spectrogram
-        mel_spectrogram = preproc.get_feature(fix_audio)
+        mel_spectrogram = self.audio_preproc.get_spectrogram(fix_audio)
         mel_spectrogram = tf.image.resize(np.expand_dims(mel_spectrogram, axis=-1), target_shape)
         mel_spectrogram = tf.reshape(mel_spectrogram, (1,) + target_shape + (1,))
         prediction = self.model.predict(mel_spectrogram)[0]

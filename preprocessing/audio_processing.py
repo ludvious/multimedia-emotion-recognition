@@ -1,10 +1,12 @@
-import os, librosa, pyaudio, wave
+import os, librosa
 from librosa.util import fix_length
 import numpy as np
 from moviepy.editor import *
 from pathlib import Path
 import matplotlib
 import tensorflow as tf
+from pydub import AudioSegment
+from pydub.utils import make_chunks
 from config import SAMPLING_RATE, MIN_AUDIO_LEN, MAX_AUDIO_LEN, N_MELS_BAND, HOP_LENGTH
 
 
@@ -16,8 +18,18 @@ class AudioProcessing:
         self.min_audio_len = MIN_AUDIO_LEN
         self.max_audio_len = MAX_AUDIO_LEN
         self.max_hz_audio_len = MAX_AUDIO_LEN * SAMPLING_RATE  #usato per fare il padding, misura lunghezza audio in hz
+        self.target_shape = (N_MELS_BAND, N_MELS_BAND) # for resize to shape for CNN 128x128
+    
+    def to_wav(self, file_path: str, label):
 
-    #TODO: vedere come funzionano e gestire i parametri relativi all audio come sample rate, hop length etc
+        file = Path(file_path)
+        file_name = file.stem
+        audio = AudioSegment.from_file(file)
+        chunk_length_ms = 1000  # 1 seconds per chunk
+        chunks = make_chunks(audio, chunk_length_ms)
+        # Export all of the individual chunks as separate files
+        for i, chunk in enumerate(chunks):
+            chunk.export(f"data/speech/audio/{label}/{file_name}_{i}.wav", format="wav")
 
     def load_audio(self, audio_path):
         """
@@ -29,18 +41,19 @@ class AudioProcessing:
         Returns:
             np.ndarray: Audio time-series array.
         """
-        audio, sr = librosa.load(audio_path, sr=None) #load audio with original sampling rate
+        #load audio with original sampling rate
+        audio, sr = librosa.load(audio_path, sr=None)
         print(f"Loaded audio min: {audio.min()}, max: {audio.max()}; Sample Rate: {sr}")
         #resample to target rate for normalize all audio
         if sr != self.sampling_rate:
             fix_audio = librosa.resample(audio, orig_sr=sr, target_sr=self.sampling_rate)
             print(f"Sample Rate after resample: {sr}")
-        #TODO: aggiungere taglio parte silenzio?
-        #fix_audio, index = librosa.effects.trim(audio, top_db = 30)
 
         if len(audio) == 0:
             raise ValueError("Audio data is empty")
+        
         # cut or pad the audio to a fixed length TODO DA TESTARE e vedere se confermare
+        #(non serve perche do gia in input audio di lunghezza fissa)
         if len(audio) < MIN_AUDIO_LEN:
             fix_audio = fix_length(audio, size=MAX_AUDIO_LEN*self.sampling_rate)
         if len(audio) > MAX_AUDIO_LEN:
@@ -56,7 +69,7 @@ class AudioProcessing:
         mel_features = librosa.feature.melspectrogram(y=audio_data, sr=self.sampling_rate, hop_length=self.hop_length, n_mels=self.n_mels_band)
         mel_spec_db = librosa.power_to_db(mel_features, ref=np.max) #convert to decibel
         normalized_spectrogram = (mel_spec_db - mel_spec_db.min()) / (mel_spec_db.max() - mel_spec_db.min())
-        resized_spectrogram = resize(normalized_spectrogram, (128,128), mode='reflect', anti_aliasing=True)
+        resized_spectrogram = tf.image.resize(normalized_spectrogram, self.target_shape, mode='reflect', anti_aliasing=True)
         if mel_features.max() == 0:
             raise ValueError("Mel spectrogram contains only zeros.")
         if mel_spec_db.shape[1] == 0:
@@ -67,7 +80,8 @@ class AudioProcessing:
     def audio_to_spectrogram_img(self, audio_path, label, save_img=True):
         """
         Converte un file audio in un spettrogramma e lo salva come img.
-        
+        Questa funzione é utile per creare tutti gli spectrogrammi e visualizzare quelli da scartare.
+
         :param audio_path: Percorso del file audio
         :param output_image_path: Percorso del file immagine in output. Se non specificato, usa lo stesso nome dell'audio.
         :return: Percorso del file immagine salvato
@@ -107,34 +121,3 @@ class AudioProcessing:
                         print(f"Saved spectrogram for {label.name}: {audio_file.name}")
                     except Exception as e:
                         print(f"Error processing {audio_path}: {e}")
-    
-    def create_dataset(self, audio_file_path: str):
-        """
-        Load all audio files from folders, extract features, and return the dataset with features and labels.
-
-        Returns:
-            tuple: Features and corresponding labels.
-        """
-        X = [] # features
-        Y = [] # labels
-        target_shape = (self.n_mels_band, self.n_mels_band) # for resize to shape for CNN 128x128
-
-        audio_path = Path(audio_file_path)
-        #TODO FIXARE CON PATHLIB 
-        for label in audio_path.iterdir(): #each folder name must be the label name
-            if label.is_dir():
-                for audio_file in label.iterdir():
-                    file_path = audio_file
-                    try:
-                        # Load and preprocess audio
-                        audio = self.load_audio(file_path)
-                        # Extract Mel spectrogram features
-                        mel_spectrogram = self.get_spectrogram(audio)
-                        feature = np.expand_dims(mel_spectrogram, axis=-1)
-                        # Append the features and label
-                        X.append(feature)
-                        Y.append(label)
-                    except Exception as e:
-                        print(f"Error processing {file_path}: {e}")
-        
-        return np.array(X), np.array(Y)
