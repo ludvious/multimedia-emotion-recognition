@@ -3,10 +3,9 @@ from keras.api.layers import Input, Conv2D, MaxPooling2D, SeparableConv2D, Batch
 from keras.api.regularizers import l2
 from keras.api import layers
 from keras.api.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
-from preprocessing.face_processing import create_face_dataset
+from preprocessing.dataset import create_face_dataset
 import matplotlib.pyplot as plt
 from config import NUM_LABELS
-from keras._tf_keras.keras.preprocessing.image import ImageDataGenerator
 
 class FaceModel:
     def __init__(self, model_name, input_shape, batch_size: int) -> None:
@@ -153,24 +152,27 @@ class FaceModel:
         model.summary()
 
         return model
+    
+    def create_datasets(self, data_path):
+        print(f"Loading and preprocess the dataset ...\n")
+        train, validation = create_face_dataset(data_path, self.input_shape, self.batch_size)
 
-    def train_face_model(self, data_path, epochs=50, verbose = 1):
-            
-            print(f"Loading and preprocess the dataset ...\n")
-            train, validation = create_face_dataset(data_path, self.input_shape, self.batch_size)
-        
-            # add callbacks
-            early_stop = EarlyStopping('val_loss', patience=10)
-            reduce_lr = ReduceLROnPlateau('val_loss', factor=0.1, patience=5, verbose=1) # Reduce learning rate when a metric has stopped improving
-            checkpoint_models_path = f'models/face/{self.model_name}'+'checkpoint.model.keras'
-            model_checkpoint = ModelCheckpoint(filepath=checkpoint_models_path, monitor='val_loss', verbose=verbose, save_best_only=True)
-            callbacks = [model_checkpoint, early_stop, reduce_lr]
-            print(f"add callbacks ...\n")
+        return train, validation
 
-            print(f"Start training ... \n")
-            history = self.model.fit(train, batch_size=self.batch_size, epochs=epochs, validation_data=validation, callbacks=callbacks)
 
-            return history
+    def train_model(self, train, validation, epochs=50, verbose = 1):
+        # add callbacks
+        early_stop = EarlyStopping('val_loss', patience=10)
+        reduce_lr = ReduceLROnPlateau('val_loss', factor=0.1, patience=5, verbose=1) # Reduce learning rate when a metric has stopped improving
+        checkpoint_models_path = f'models/face/{self.model_name}'+'checkpoint.model.keras'
+        model_checkpoint = ModelCheckpoint(filepath=checkpoint_models_path, monitor='val_loss', verbose=verbose, save_best_only=True)
+        callbacks = [model_checkpoint, early_stop, reduce_lr]
+        print(f"add callbacks ...\n")
+
+        print(f"Start training ... \n")
+        history = self.model.fit(train, batch_size=self.batch_size, epochs=epochs, validation_data=validation, callbacks=callbacks)
+
+        return history
 
     def plot_training_history(self, history):
         plt.figure(figsize=(10, 5))

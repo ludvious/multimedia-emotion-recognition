@@ -1,12 +1,14 @@
 from keras.api.models import Model
 from keras.api.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from keras.api.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 import matplotlib.pyplot as plt
-from pathlib import Path
-import numpy as np
+from sklearn.model_selection import train_test_split
+from preprocessing.dataset import create_audio_dataset
+from keras.api.utils import to_categorical
 
 class AudioModel:
-    def __init__(self, num_classes: int, input_shape, batch_size: int) -> None:
-        self.num_classes = num_classes
+    def __init__(self, num_labels: int, input_shape, batch_size: int) -> None:
+        self.num_labels = num_labels
         self.input_shape = input_shape
         self.batch_size = batch_size
         self.model = self._create_model()
@@ -25,7 +27,7 @@ class AudioModel:
         x = MaxPooling2D((2, 2))(x)
         x = Flatten()(x)
         x = Dense(64, activation='relu')(x)
-        output_layer = Dense(self.num_classes, activation='softmax')(x)
+        output_layer = Dense(self.num_labels, activation='softmax')(x)
         model = Model(input_layer, output_layer)
 
         print(f"Creating Model ...\n")
@@ -35,23 +37,29 @@ class AudioModel:
 
         return model
     
-    def train_audio_model(self, epochs=100, patience=50, verbose = 1):
-            
-            print(f"Loading and preprocess the data ...\n")
-            #TODO mettere metodo per creare il dataset
+    def create_dataset(self, path_data: str):
+        print(f"Loading and preprocess the dataset ...\n")
+        # Split data into training and testing sets
+        features, labels = create_audio_dataset(path_data, self.num_labels)
+        labels = to_categorical(labels, num_labels=self.num_labels)  # Convert labels to one-hot encoding
+
+        return features, labels
+
+    def train_model(self, features, labels, epochs=100, verbose = 1):
         
-            # add callbacks to review for this model
-            '''early_stop = EarlyStopping('val_loss', patience=50)
-            reduce_lr = ReduceLROnPlateau('val_loss', factor=0.1, patience=int(patience/4), verbose=1) # Reduce learning rate when a metric has stopped improving
-            checkpoint_models_path = 'models/face/mini_xception_'+'checkpoint.model.keras'
-            model_checkpoint = ModelCheckpoint(filepath=checkpoint_models_path, monitor='val_loss', verbose=verbose, save_best_only=True)
-            callbacks = [model_checkpoint, early_stop, reduce_lr]
-            print(f"add callbacks ...\n")
+        X_train, X_val, y_train, y_val = train_test_split(features, labels, test_size=0.2, random_state=42)
+        # add callbacks to review for this model
+        early_stop = EarlyStopping('val_loss', patience=10)
+        reduce_lr = ReduceLROnPlateau('val_loss', factor=0.1, patience=5, verbose=1) # Reduce learning rate when a metric has stopped improving
+        checkpoint_models_path = 'models/face/mini_xception_'+'checkpoint.model.keras'
+        model_checkpoint = ModelCheckpoint(filepath=checkpoint_models_path, monitor='val_loss', verbose=verbose, save_best_only=True)
+        callbacks = [model_checkpoint, early_stop, reduce_lr]
+        print(f"add callbacks ...\n")
 
-            print(f"Start training ... \n")
-            history = self.model.fit(train, batch_size=self.batch_size, epochs=epochs, validation_data=validation, callbacks=callbacks)
+        print(f"Start training ... \n")
+        history = self.model.fit(X_train, y_train, batch_size=self.batch_size, epochs=epochs, validation_data=(X_val, y_val), callbacks=callbacks)
 
-            return history'''
+        return history
 
     def plot_training_history(self, history):
         plt.figure(figsize=(10, 5))
