@@ -19,17 +19,43 @@ class AudioProcessing:
         self.max_audio_len = MAX_AUDIO_LEN
         self.max_hz_audio_len = MAX_AUDIO_LEN * SAMPLING_RATE  #usato per fare il padding, misura lunghezza audio in hz
         self.target_shape = (N_MELS_BAND, N_MELS_BAND) # for resize to shape for CNN 128x128
-    
-    def to_wav(self, file_path: str, label):
-
+      
+    def to_wav(file_path: str, label: str, overlapping:bool, chunk_length_ms=1000, overlap_ms=500):
+        """
+        Split audio in chunks and augment with overlapping chunks and save each chunk as a .wav file.
+        
+        :param file_path: Path to the input audio file.
+        :param label: Label for the output directory.
+        :pram overlapping: bool True or False according to apply overlapping
+        :param chunk_length_ms: Length of each chunk in milliseconds (default 1000 ms).
+        :param overlap_ms: Amount of overlap between chunks in milliseconds (default 500 ms).
+        """
+        # Load the audio file
         file = Path(file_path)
         file_name = file.stem
         audio = AudioSegment.from_file(file)
-        chunk_length_ms = 1000  # 1 seconds per chunk
         chunks = make_chunks(audio, chunk_length_ms)
-        # Export all of the individual chunks as separate files
         for i, chunk in enumerate(chunks):
             chunk.export(f"data/speech/audio/{label}/{file_name}_{i}.wav", format="wav")
+        
+        if overlapping==True:
+            # Calculate the hop size (how much we shift each chunk)
+            hop_size_ms = chunk_length_ms - overlap_ms  # e.g., 1000 ms chunk, 500 ms overlap -> hop_size = 500 ms
+            
+            # Start slicing the audio into overlapping chunks
+            start = 0
+            chunk_id = 0  # Track chunk number for naming
+            
+            while start + chunk_length_ms <= len(audio):  # Ensure we don't exceed audio length
+                # Get the chunk (from 'start' to 'start + chunk_length_ms')
+                overlap_chunk = audio[start:start + chunk_length_ms]
+                
+                # Export chunk as a .wav file
+                overlap_chunk.export(f"data/speech/audio/{label}/{file_name}_overlap_{chunk_id}.wav", format="wav")
+                
+                # Move start to the next position (hop size)
+                start += hop_size_ms
+                chunk_id += 1
 
     def load_audio(self, audio_path):
         """
@@ -121,3 +147,8 @@ class AudioProcessing:
                         print(f"Saved spectrogram for {label.name}: {audio_file.name}")
                     except Exception as e:
                         print(f"Error processing {audio_path}: {e}")
+
+
+# Example usage
+preproc = AudioProcessing()
+preproc.to_wav_with_overlap("path_to_audio_file.wav", "label_name", chunk_length_ms=1000, overlap_ms=500)
