@@ -3,8 +3,31 @@ from keras.api.layers import RandomFlip, RandomRotation, RandomZoom, Rescaling, 
 import tensorflow as tf
 from keras._tf_keras.keras.preprocessing.image import ImageDataGenerator
 
-def prepocess_face_dataset(self):
+def create_face_dataset(data_path, input_shape, batch_size):
 
+    train_datagen, validation_datagen = augmentation_face_data()
+
+    train_generator = train_datagen.flow_from_directory(
+        directory = f'{data_path}/train',    # Directory containing the training data
+        target_size = input_shape[:2],          # Resizes all images to 48x48 pixels
+        batch_size = batch_size,                 # Number of images per batch
+        color_mode = "grayscale",        # Converts the images to grayscale
+        class_mode = "categorical",      # Classifies the images into 7 categories
+        subset = "training"              # Uses the training subset of the data
+    )
+
+    validation_generator = validation_datagen.flow_from_directory(
+        directory = f'{data_path}/test',     # Directory containing the validation data
+        target_size = input_shape[:2],          # Resizes all images to 48x48 pixels
+        batch_size = 64,                 # Number of images per batch
+        color_mode = "grayscale",        # Converts the images to grayscale
+        class_mode = "categorical",      # Classifies the images into 7 categories
+        subset = "validation"            # Uses the validation subset of the data
+    )
+
+    return train_generator, validation_generator
+
+def augmentation_face_data():
     train_datagen = ImageDataGenerator(
         width_shift_range = 0.1,        # Randomly shift the width of images by up to 10%
         height_shift_range = 0.1,       # Randomly shift the height of images by up to 10%
@@ -18,22 +41,4 @@ def prepocess_face_dataset(self):
         validation_split = 0.2          # Set aside 20% of the data for validation
     )
 
-    train_generator = train_datagen.flow_from_directory(
-        directory = '/content/train',    # Directory containing the training data
-        target_size = self.input_shape[:2],          # Resizes all images to 48x48 pixels
-        batch_size = self.batch_size,                 # Number of images per batch
-        color_mode = "grayscale",        # Converts the images to grayscale
-        class_mode = "categorical",      # Classifies the images into 7 categories
-        subset = "training"              # Uses the training subset of the data
-    )
-
-    validation_generator = validation_datagen.flow_from_directory(
-        directory = '/content/test',     # Directory containing the validation data
-        target_size = self.input_shape[:2],          # Resizes all images to 48x48 pixels
-        batch_size = 64,                 # Number of images per batch
-        color_mode = "grayscale",        # Converts the images to grayscale
-        class_mode = "categorical",      # Classifies the images into 7 categories
-        subset = "validation"            # Uses the validation subset of the data
-    )
-
-    return train_generator, validation_generator
+    return train_datagen, validation_datagen

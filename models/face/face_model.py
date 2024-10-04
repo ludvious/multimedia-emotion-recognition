@@ -3,7 +3,7 @@ from keras.api.layers import Input, Conv2D, MaxPooling2D, SeparableConv2D, Batch
 from keras.api.regularizers import l2
 from keras.api import layers
 from keras.api.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
-from preprocessing.face_processing import prepocess_face_dataset
+from preprocessing.face_processing import create_face_dataset
 import matplotlib.pyplot as plt
 from config import NUM_LABELS
 from keras._tf_keras.keras.preprocessing.image import ImageDataGenerator
@@ -147,10 +147,17 @@ class FaceModel:
         # Create the model
         model = Model(inputs=inputs, outputs=outputs)
 
-    def train_face_model(self, epochs=100, patience=50, verbose = 1):
+        print(f"Creating Model ...\n")
+        model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        print(f"Model Summary : \n")
+        model.summary()
+
+        return model
+
+    def train_face_model(self, data_path, epochs=50, verbose = 1):
             
-            print(f"Loading and preprocess the data ...\n")
-            train, validation = prepocess_face_dataset(self.input_shape, self.batch_size)
+            print(f"Loading and preprocess the dataset ...\n")
+            train, validation = create_face_dataset(data_path, self.input_shape, self.batch_size)
         
             # add callbacks
             early_stop = EarlyStopping('val_loss', patience=10)
