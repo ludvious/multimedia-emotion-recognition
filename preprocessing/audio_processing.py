@@ -20,7 +20,7 @@ class AudioProcessing:
         self.max_hz_audio_len = MAX_AUDIO_LEN * SAMPLING_RATE  #usato per fare il padding, misura lunghezza audio in hz
         self.target_shape = (N_MELS_BAND, N_MELS_BAND) # for resize to shape for CNN 128x128
       
-    def to_wav(file_path: str, label: str, overlapping:bool, chunk_length_ms=1000, overlap_ms=500):
+    def to_wav(self, file_path: str, label: str, overlapping: bool, chunk_length_ms=1000, overlap_ms=1500):
         """
         Split audio in chunks and augment with overlapping chunks and save each chunk as a .wav file.
         
@@ -147,8 +147,3 @@ class AudioProcessing:
                         print(f"Saved spectrogram for {label.name}: {audio_file.name}")
                     except Exception as e:
                         print(f"Error processing {audio_path}: {e}")
-
-
-# Example usage
-preproc = AudioProcessing()
-preproc.to_wav_with_overlap("path_to_audio_file.wav", "label_name", chunk_length_ms=1000, overlap_ms=500)

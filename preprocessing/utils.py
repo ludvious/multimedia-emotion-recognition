@@ -14,24 +14,6 @@ def add_folders(start_path, labels):
         label_folder = os.path.join(start_path, label)
         os.makedirs(label_folder)
 
-def get_audio_from_mp4(filepath):
-
-    files = os.listdir(filepath)
-
-    for file in files:
-        if file.endswith(".m4v"):
-            fileName = os.path.splitext(file)
-            video = mp.VideoFileClip(filepath+file)
-            audio = video.audio
-            audio.write_audiofile(filepath+fileName[0]+".wav")
-
-def get_audio_from_yt(youtube_url):
-    # download a file with only audio, to save space
-    # if the final goal is to convert to mp3
-    y = YouTube(youtube_url)
-    t = y.streams.filter(only_audio=True).all()
-    t[0].download(output_path="../VideoFiles")
-
 def plot_spec(audio_data, sr, name):
     """stampa a video lo spettogramma e lo salva come immagine
     """
