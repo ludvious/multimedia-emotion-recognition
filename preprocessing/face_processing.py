@@ -1,4 +1,7 @@
 from keras._tf_keras.keras.preprocessing.image import ImageDataGenerator
+import mediapipe as mp
+import cv2
+import numpy as np
 
 def augmentation_face_data():
     train_datagen = ImageDataGenerator(
@@ -37,3 +40,23 @@ def process_split_face_data(data_path, train_datagen, validation_datagen, input_
     )
 
     return train_generator, validation_generator
+
+def get_face_landmarks(image, static_image_mode=True):
+
+    # Read the input image
+    image_input_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    mp_face_mesh = mp.solutions.face_mesh
+    face_mesh = mp_face_mesh.FaceMesh(static_image_mode=static_image_mode,
+                                                max_num_faces=1,
+                                                min_detection_confidence=0.5)
+    
+    results = face_mesh.process(image_input_rgb)
+
+    if results.multi_face_landmarks:
+        landmarks = results.multi_face_landmarks[0]
+        landmark_array = np.array([(lm.x, lm.y, lm.z) for lm in landmarks.landmark])
+        
+        return landmark_array
+    else:
+        return None   
