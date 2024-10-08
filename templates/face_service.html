@@ -51,7 +51,7 @@
 
     <div class="video-container" id="video-container"> <!-- Add an ID for easy access -->
       <p style="text-align:center;">
-        <img src="{{ url_for('video_feed') }}" width="95%" id="video-feed">
+        <img width="95%" id="video-feed">
       </p>
     </div>
   </div>
@@ -66,13 +66,16 @@
     function toggleVideoFeed() {
         const videoContainer = document.getElementById('video-container');
         const toggleButton = document.getElementById('toggle-btn');
+        const videoFeed = document.getElementById('video-feed');
 
         if (videoContainer.style.display === 'none' || videoContainer.style.display === '') {
             // Start the video feed
+            videoFeed.src = "{{ url_for('video_feed') }}";
             videoContainer.style.display = 'block';
             toggleButton.innerText = 'Stop';
         } else {
             // Stop the video feed
+            videoFeed.src = '';
             videoContainer.style.display = 'none';
             toggleButton.innerText = 'Start';
         }

@@ -1,7 +1,7 @@
 from flask import Flask, render_template, Response, request, jsonify
 from services.face_emotion_service import FaceEmotionService
 from services.speech_emotion_service import SpeechEmotionService
-import os
+import os, random, string
 from datetime import datetime
 
 app = Flask(__name__, template_folder='templates')
@@ -30,7 +30,7 @@ def start_stream(camera):
 # rotta in cui viene eseguito lo streaming e il modello
 @app.route('/video-feed')
 def video_feed():
-    model_path = 'models/face/cnn_checkpoint.model.keras'
+    model_path = 'models/face/vgg_checkpoint.model.keras'
     return Response(start_stream(FaceEmotionService(model_path=model_path, index_cam=1)), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/process-audio', methods=['POST'])
@@ -38,8 +38,8 @@ def predict_audio():
     if 'audio' not in request.files:
         return Response(jsonify({'error': 'No audio file uploaded'}), status=400, mimetype='application/json')
     
-    model_path = 'path_to_speech_model.keras'
-    speech_service = SpeechEmotionService(model_path)
+    #model_path = 'path_to_speech_model.keras'
+    #speech_service = SpeechEmotionService(model_path)
     try:
         # Get the audio file from the request
         audio = request.files['audio']
@@ -49,8 +49,9 @@ def predict_audio():
         file_size = os.path.getsize(filename)
         os.remove(filename)
         
-        emotion = speech_service.predict(audio)
-        return jsonify({'Speech emotion detected': emotion, 'file_size': file_size, 'filename': filename})
+        #emotion = speech_service.predict(audio)
+        label = ''.join(random.sample(string.digits, 10))
+        return jsonify({'predicted_label': label, 'file_size': file_size, 'filename': filename})
     except Exception as e:
         return jsonify({'error': str(e)})
 
