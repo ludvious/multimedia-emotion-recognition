@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chunked Voice and Video Recorder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #f5f5f5;
+        }
+        .video-container {
+            margin: 20px 0;
+            background-color: #000;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .video-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            display: none;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        #toggleButton {
+            padding: 12px 24px;
+            margin: 0 10px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            background-color: #4CAF50;
+            color: white;
+            min-width: 150px;
+        }
+        #toggleButton.recording {
+            background-color: #f44336;
+            animation: pulse 2s infinite;
+        }
+        #toggleButton:hover {
+            opacity: 0.8;
+        }
+        #toggleButton:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        #timer {
+            font-size: 24px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        #recordingInfo {
+            margin-top: 20px;
+            text-align: left;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 4px;
+            display: none;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Multimodal Emotion Recognition</h1>
+    
+    <div class="video-container">
+        <img width="95%" id="videoFeed">
+    </div>
+    
+    <div id="timer">00:00</div>
+    
+    <div class="controls">
+        <button id="toggleButton" onclick="toggleRecording()">Start</button>
+    </div>
+    
+    <div id="status"></div>
+    <div id="recordingInfo"></div>
+
+    <script>
+        let recording = false;
+        let startTime;
+        let timerInterval;
+        let videoFeed = null;
+        const toggleButton = document.getElementById('toggleButton');
+        const status = document.getElementById('status');
+        const timer = document.getElementById('timer');
+        const recordingInfo = document.getElementById('recordingInfo');
+        
+        function startVideoFeed() {
+            videoFeed = document.getElementById('videoFeed');
+            videoFeed.src = "{{ url_for('video_feed') }}";
+            videoFeed.style.display = 'block';
+        }
+        
+        function stopVideoFeed() {
+            if (videoFeed) {
+                videoFeed.src = '';
+                videoFeed.style.display = 'none';
+            }
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            timer.textContent = `${minutes}:${seconds}`;
+        }
+
+        function displayRecordingInfo(info) {
+            recordingInfo.style.display = 'block';
+            recordingInfo.innerHTML = `
+                <h3>Recording Summary:</h3>
+                <p>Total Chunks: ${info.total_chunks}</p>
+                <h4>Chunks Information:</h4>
+                ${info.chunks.map(chunk => `
+                    <div style="margin-bottom: 10px; padding: 5px; border-bottom: 1px solid #eee;">
+                        <p>Timestamp: ${chunk.timestamp}</p>
+                        <p>Frames: ${chunk.frames_count}</p>
+                        <p>Face Emotion: ${chunk.face_emotion_predicted}</p>
+                        <p>Sample Rate: ${chunk.emotion_audio}</p>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        function toggleRecording() {
+            toggleButton.disabled = true;
+            
+            if (!videoFeed) {
+                startVideoFeed();
+            }
+            
+            fetch('/process_recording')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        recording = data.action === 'started';
+                        status.textContent = data.message;
+                        
+                        if (recording) {
+                            // Started recording
+                            toggleButton.textContent = 'Stop Recording';
+                            toggleButton.classList.add('recording');
+                            startTime = Date.now();
+                            timerInterval = setInterval(updateTimer, 1000);
+                            recordingInfo.style.display = 'none';
+                        } else {
+                            // Stopped recording
+                            toggleButton.textContent = 'Start Recording';
+                            toggleButton.classList.remove('recording');
+                            clearInterval(timerInterval);
+                            timer.textContent = '00:00';
+                            displayRecordingInfo(data.recording_info);
+                        }
+                    } else {
+                        status.textContent = data.message;
+                    }
+                    toggleButton.disabled = false;
+                });
+        }
+
+        // Clean up resources when leaving the page
+        window.addEventListener('beforeunload', stopVideoFeed);
+        
+        // Start video feed when the page loads
+        document.addEventListener('DOMContentLoaded', startVideoFeed);
+    </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-import os
+import os, pyaudio
 
 LABELS = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
 LABELS_DICT = {0: 'Angry', 1: 'Disgust', 2: 'Fear', 3: 'Happy', 4: 'Sad', 5: 'Surprised', 6: 'Neutral'}
@@ -13,4 +13,11 @@ N_MELS_BAND = 128
 HOP_LENGTH = 512 
 MIN_AUDIO_LEN = 1 #second
 MAX_AUDIO_LEN = 2 #second
-AUDIO_LEN = 1
+
+RATE = 44100
+CHANNELS = 1
+FORMAT = pyaudio.paInt16
+CHUNK = RATE  # Set chunk size to exactly one second of audio
+RECORD_SECONDS = 1
+# Video configuration
+FPS = 30

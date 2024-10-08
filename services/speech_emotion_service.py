@@ -36,7 +36,7 @@ class SpeechEmotionService:
             audio (_type_): _description_
 
         Returns:
-            _type_: _description_
+            str : emotion
         """
 
         target_shape = (self.n_mels, self.n_mels)
@@ -48,6 +48,7 @@ class SpeechEmotionService:
         mel_spectrogram = tf.reshape(mel_spectrogram, (1,) + target_shape + (1,))
         prediction = self.model.predict(mel_spectrogram)[0]
         emotion = self.labels[np.argmax(prediction)]
-        print(f'Speech emotion detected: {emotion}')
+        #print(f'Speech emotion detected: {emotion}')
+        print(f'Speech emotion detected: OK')
 
         return emotion
