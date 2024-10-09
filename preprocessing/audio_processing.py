@@ -96,14 +96,14 @@ class AudioProcessing:
         """        
         mel_features = librosa.feature.melspectrogram(y=audio_data, sr=self.sampling_rate, hop_length=self.hop_length, n_mels=self.n_mels_band)
         mel_spec_db = librosa.power_to_db(mel_features, ref=np.max) #convert to decibel
-        #normalized_spectrogram = (mel_spec_db - mel_spec_db.min()) / (mel_spec_db.max() - mel_spec_db.min())
+        normalized_spectrogram = (mel_spec_db - mel_spec_db.min()) / (mel_spec_db.max() - mel_spec_db.min())
         # Save the Mel spectrogram as an image
         if mel_features.max() == 0:
             raise ValueError("Mel spectrogram contains only zeros.")
         if mel_spec_db.shape[1] == 0:
             raise ValueError("Invalid spectrogram shape")
 
-        return mel_spec_db
+        return normalized_spectrogram
     
     def audio_to_spectrogram_img(self, audio_path, label, save_img=True):
         """

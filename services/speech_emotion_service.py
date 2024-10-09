@@ -27,7 +27,7 @@ class SpeechEmotionService:
 
         return mel_spectrogram
     
-    def predict(self, audio):
+    def predict_audio(self, audio):
         """metodo usato nell app che permette di fare la predizione dell audio registrato. Prende in input l audio, segue il processo di elaborazione;
         l input del modello saranno spectrogrammi.
         Infine ritorna la label.
@@ -44,7 +44,7 @@ class SpeechEmotionService:
         fix_audio, sr = self.audio_preproc.load_audio(BytesIO(audio.read()))
         # get spectrogram
         mel_spectrogram = self.audio_preproc.get_spectrogram(fix_audio)
-        # Add channel dimension for CNN (height, width, channels)
+        # Add channel dimension for CNN (height, width, channels) QUESTO DOVREBBE FUNZIONARE CE DA TESTARLO
         mel_spectrogram = tf.image.resize(np.expand_dims(mel_spectrogram, axis=-1), target_shape)
         mel_spectrogram = tf.reshape(mel_spectrogram, (1,) + target_shape + (1,))
         prediction = self.model.predict(mel_spectrogram)[0]
