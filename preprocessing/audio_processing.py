@@ -4,6 +4,7 @@ import numpy as np
 from moviepy.editor import *
 from pathlib import Path
 import matplotlib
+import matplotlib.pyplot as plt
 import tensorflow as tf
 from pydub import AudioSegment
 from pydub.utils import make_chunks
@@ -73,16 +74,17 @@ class AudioProcessing:
         #resample to target rate for normalize all audio
         if sr != self.sampling_rate:
             fix_audio = librosa.resample(audio, orig_sr=sr, target_sr=self.sampling_rate)
-            print(f"Sample Rate after resample: {sr}")
+            print(f"Sample Rate after resample: {self.sampling_rate}")
 
-        if len(audio) == 0:
+        audio_len = librosa.get_duration(y=fix_audio)
+        if audio_len == 0:
             raise ValueError("Audio data is empty")
         
         # cut or pad the audio to a fixed length TODO DA TESTARE e vedere se confermare
         #(non serve perche do gia in input audio di lunghezza fissa)
-        if len(audio) < MIN_AUDIO_LEN:
+        if audio_len < MIN_AUDIO_LEN:
             fix_audio = fix_length(audio, size=MAX_AUDIO_LEN*self.sampling_rate)
-        if len(audio) > MAX_AUDIO_LEN:
+        if audio_len > MAX_AUDIO_LEN:
             fix_audio = fix_length(audio, size=MAX_AUDIO_LEN*self.sampling_rate)
         
         return fix_audio, sr
@@ -94,14 +96,14 @@ class AudioProcessing:
         """        
         mel_features = librosa.feature.melspectrogram(y=audio_data, sr=self.sampling_rate, hop_length=self.hop_length, n_mels=self.n_mels_band)
         mel_spec_db = librosa.power_to_db(mel_features, ref=np.max) #convert to decibel
-        normalized_spectrogram = (mel_spec_db - mel_spec_db.min()) / (mel_spec_db.max() - mel_spec_db.min())
-        resized_spectrogram = tf.image.resize(normalized_spectrogram, self.target_shape, mode='reflect', anti_aliasing=True)
+        #normalized_spectrogram = (mel_spec_db - mel_spec_db.min()) / (mel_spec_db.max() - mel_spec_db.min())
+        # Save the Mel spectrogram as an image
         if mel_features.max() == 0:
             raise ValueError("Mel spectrogram contains only zeros.")
         if mel_spec_db.shape[1] == 0:
             raise ValueError("Invalid spectrogram shape")
 
-        return resized_spectrogram
+        return mel_spec_db
     
     def audio_to_spectrogram_img(self, audio_path, label, save_img=True):
         """
@@ -121,17 +123,25 @@ class AudioProcessing:
         y, sr = self.load_audio(audio_file_path)
         file_name = os.path.splitext(os.path.basename(audio_path))[0] # pick the same name file
         # Genera lo spettrogramma
-        spec = self.get_spectrogram(audio_data=y)
+        s_dB = self.get_spectrogram(audio_data=y)
         if save_img:
             # Salva lo spettrogramma come immagine
             output_path = spec_label_folder / f'{file_name}.png'
-            matplotlib.image.imsave(output_path, spec)
+            # Save the Mel spectrogram as an image
+            plt.figure(figsize=(4, 4))
+            librosa.display.specshow(s_dB, sr=sr, hop_length=self.hop_length, x_axis='time', y_axis='mel', cmap='viridis')
+            plt.axis('off')  # No axes for the image
+            plt.tight_layout()
+            plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
+            plt.close()
+            #matplotlib.image.imsave(output_path, spec)
 
-    def gen_mel_spectrogram_dataset(self, audio_file_path: str):
+    def gen_mel_spectrogram_images(self, audio_file_path: str):
         """metodo per generare le immagini spettogrammi dei file audio e salvarle(vengono eseguito step 1 e 2 descritti qui):
         1 - carico i file audio e li pre elaboro
         2 - genero i spettogrammi e li salvo in una cartella divisi per label
         3 - passaggio da fare manualmente, controllare i spettogrammi buoni e filtrare quelli non rumorosi e non buoni
+        4 - la cartella con i spectogrammi usata come input ad ImagedataGenerator per creare facilmente i generator per train e validation con le loro labels
         """
         audio_path = Path(audio_file_path)
         spec_path = Path('data/speech/spectrogram')

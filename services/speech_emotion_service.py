@@ -44,6 +44,7 @@ class SpeechEmotionService:
         fix_audio, sr = self.audio_preproc.load_audio(BytesIO(audio.read()))
         # get spectrogram
         mel_spectrogram = self.audio_preproc.get_spectrogram(fix_audio)
+        # Add channel dimension for CNN (height, width, channels)
         mel_spectrogram = tf.image.resize(np.expand_dims(mel_spectrogram, axis=-1), target_shape)
         mel_spectrogram = tf.reshape(mel_spectrogram, (1,) + target_shape + (1,))
         prediction = self.model.predict(mel_spectrogram)[0]
