@@ -1,5 +1,24 @@
 # multimedia-emotion-recognition
 
+### Run with face landmark detection
+This need further installation for the OS:
+ - for Windows:
+    ``cmake`` & ``Visual Studio`` for all packages and c++ compiler
+ -  for Linux:
+    ``cmake``
+    ``gcc gcc-c++ make``
+    ``boost boost-devel``
+    ``python3-devel`` 
+
+Then is possible to install ``dlib`` with the requirements.txt
+
+#### Troubleshooting:
+-   If you encounter errors during compilation, ensure that all required development tools and libraries are installed (cmake, gcc, boost, etc.).
+-   If you have a specific GPU setup and want to use CUDA, you'll need to configure dlib for GPU acceleration manually.
+
+### Install enviroment and dependencies
+- ``python3 -m venv .venv``
+- ``pip install -r requirements.txt``
 
 #### run applicazione
 ``flask --app app run``

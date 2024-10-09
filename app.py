@@ -53,7 +53,7 @@ def generate_frames():
                 
             if is_recording and recorder:
                 recorder.frame_buffer.append(frame.copy())
-                emotion = em_service.predict_frame(frame)
+                emotion = em_service.predict_frame(frame) # use predict_frame_landmark method 
                 recorder.emotion_buffer.append(emotion)
                 
             # Convert frame to jpg for streaming
