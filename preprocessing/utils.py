@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib as plt
 from pytube import YouTube
 import moviepy.editor as mp
-from audio_processing import AudioProcessing
 from config import SAMPLING_RATE
 
 def add_folders(start_path, labels):
@@ -13,6 +12,14 @@ def add_folders(start_path, labels):
     for label in labels:
         label_folder = os.path.join(start_path, label)
         os.makedirs(label_folder)
+
+def count_files(file_path):
+    label_folders = [f for f in os.listdir(file_path) if os.path.isdir(os.path.join(file_path, f))]
+    for label in label_folders:
+        label_path = os.path.join(file_path, label)
+        # Get all audio files for this label
+        audio_files = [f for f in os.listdir(label_path) if f.endswith('.wav')]
+        print(f'{label} audio count: {len(audio_files)}')
 
 def plot_spec(audio_data, sr, name):
     """stampa a video lo spettogramma e lo salva come immagine

@@ -10,7 +10,7 @@ from pydub import AudioSegment
 from pydub.utils import make_chunks
 from scipy.io import wavfile
 from config import SAMPLING_RATE, MIN_AUDIO_LEN, MAX_AUDIO_LEN, N_MELS_BAND, HOP_LENGTH, OVERLAP_RATIO
-
+from .utils import count_files
 
 class AudioProcessing:
     def __init__(self) -> None:
@@ -131,7 +131,7 @@ class AudioProcessing:
             # Salva lo spettrogramma come immagine
             output_path = spec_label_folder / f'{file_name}.png'
             # Save the Mel spectrogram as an image
-            plt.figure(figsize=(4, 4))
+            plt.figure(figsize=(5,5))
             librosa.display.specshow(s_dB, sr=sr, hop_length=self.hop_length, x_axis='time', y_axis='mel', cmap='viridis')
             plt.axis('off')  # No axes for the image
             plt.tight_layout()
@@ -191,14 +191,15 @@ class AudioProcessing:
             output_folder: Root folder where augmented files will be saved (maintaining label structure)
             num_augmentations: Number of augmentations to create per label
         """
+        count_files(file_path)
         label_folders = [f for f in os.listdir(file_path) if os.path.isdir(os.path.join(file_path, f))]
-        
+
         for label in label_folders:
             label_path = os.path.join(file_path, label)
             
             # Get all audio files for this label
             audio_files = [f for f in os.listdir(label_path) if f.endswith('.wav')]
-            
+            print(len(audio_files))
             # Skip if there are less than 2 files in the label folder
             if len(audio_files) < 2:
                 print(f"Skipping label {label}: Not enough files for augmentation")
