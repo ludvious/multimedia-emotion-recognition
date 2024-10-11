@@ -7,7 +7,7 @@ TF_ENABLE_ONEDNN_OPTS= os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
 # AUDIO PARAMETERS
 
-SAMPLING_RATE = 22050
+TARGET_RATE = 22050 #rate for process audio
 N_MELS_BAND = 128
 WINDOW_SIZE = 2048
 HOP_LENGTH = 512 
@@ -15,10 +15,10 @@ MIN_AUDIO_LEN = 1 #second
 MAX_AUDIO_LEN = 1 #second
 OVERLAP_RATIO = 0.5
 
-RATE = 44100
+SAMPLING_RATE = 44100 #rate setting when recording audio
 CHANNELS = 1
 FORMAT = pyaudio.paInt16
-CHUNK = RATE  # Set chunk size to exactly one second of audio
+CHUNK = SAMPLING_RATE  # Set chunk size to exactly one second of audio
 RECORD_SECONDS = 1
 # Video configuration
 FPS = 30

@@ -9,23 +9,27 @@ import tensorflow as tf
 from pydub import AudioSegment
 from pydub.utils import make_chunks
 from scipy.io import wavfile
-from config import SAMPLING_RATE, MIN_AUDIO_LEN, MAX_AUDIO_LEN, N_MELS_BAND, HOP_LENGTH, OVERLAP_RATIO
+from config import SAMPLING_RATE, TARGET_RATE, CHANNELS, MIN_AUDIO_LEN, MAX_AUDIO_LEN, N_MELS_BAND, HOP_LENGTH, OVERLAP_RATIO, FORMAT
 from .utils import count_files
+import wave, pyaudio
+from datetime import datetime
 
 class AudioProcessing:
     def __init__(self) -> None:
         self.sampling_rate = SAMPLING_RATE
+        self.target_rate = TARGET_RATE
+        self.channels = CHANNELS
         self.n_mels_band = N_MELS_BAND
         self.hop_length = HOP_LENGTH
         self.min_audio_len = MIN_AUDIO_LEN
         self.max_audio_len = MAX_AUDIO_LEN
-        self.max_hz_audio_len = MAX_AUDIO_LEN * SAMPLING_RATE  #usato per fare il padding, misura lunghezza audio in hz
+        self.max_hz_audio_len = MAX_AUDIO_LEN * TARGET_RATE  #usato per fare il padding, misura lunghezza audio in hz
         self.target_shape = (N_MELS_BAND, N_MELS_BAND) # for resize to shape for CNN 128x128
         self.overlap_ratio = OVERLAP_RATIO
       
-    def to_wav(self, file_path: str, label: str, chunk_length_ms=1000):
+    def to_wav_chunk(self, file_path: str, label: str, chunk_length_ms=1000):
         """
-        Split audio in chunks and augment with overlapping chunks and save each chunk as a .wav file.
+        Split audio downloaded in chunks and augment with overlapping chunks and save each chunk as a .wav file.
         
         :param file_path: Path to the input audio file.
         :param label: Label for the output directory.
@@ -74,9 +78,9 @@ class AudioProcessing:
         audio, sr = librosa.load(audio_path, sr=None, mono=True)
         print(f"Loaded audio min: {audio.min()}, max: {audio.max()}; Sample Rate: {sr}")
         #resample to target rate for normalize all audio
-        if sr != self.sampling_rate:
-            audio = librosa.resample(audio, orig_sr=sr, target_sr=self.sampling_rate)
-            print(f"Sample Rate after resample: {self.sampling_rate}")
+        if sr != self.target_rate:
+            audio = librosa.resample(audio, orig_sr=sr, target_sr=self.target_rate)
+            print(f"Sample Rate after resample: {self.target_rate}")
 
         audio_len = librosa.get_duration(y=audio)
         if audio_len == 0:
@@ -84,9 +88,9 @@ class AudioProcessing:
         
         # cut or pad the audio to a fixed length (non serve perche do gia in input audio di lunghezza fissa)
         if audio_len < MIN_AUDIO_LEN:
-            audio = fix_length(audio, size=MAX_AUDIO_LEN*self.sampling_rate)
+            audio = fix_length(audio, size=MAX_AUDIO_LEN*self.target_rate)
         if audio_len > MAX_AUDIO_LEN:
-            audio = fix_length(audio, size=MAX_AUDIO_LEN*self.sampling_rate)
+            audio = fix_length(audio, size=MAX_AUDIO_LEN*self.target_rate)
         #normalize audio 
         audio = audio / np.max(np.abs(audio))
 
@@ -97,7 +101,7 @@ class AudioProcessing:
         Extract Mel spectrogram as feature from audio data.
         Returns: np.ndarray: Mel spectrogram.
         """        
-        mel_features = librosa.feature.melspectrogram(y=audio_data, sr=self.sampling_rate, hop_length=self.hop_length, n_mels=self.n_mels_band)
+        mel_features = librosa.feature.melspectrogram(y=audio_data, sr=self.target_rate, hop_length=self.hop_length, n_mels=self.n_mels_band)
         mel_spec_db = librosa.power_to_db(mel_features, ref=np.max) #convert to decibel
         normalized_spectrogram = (mel_spec_db - mel_spec_db.min()) / (mel_spec_db.max() - mel_spec_db.min())
         # Save the Mel spectrogram as an image
@@ -223,7 +227,7 @@ class AudioProcessing:
                     # Save the mixed audio
                     wavfile.write(
                         os.path.join(label_path, output_filename),
-                        self.sampling_rate,
+                        self.target_rate,
                         (mixed_audio * 32767).astype(np.int16)
                     )
                     

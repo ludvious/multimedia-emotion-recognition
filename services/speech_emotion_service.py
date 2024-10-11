@@ -1,5 +1,5 @@
-from keras.api.models import load_model
-from config import LABELS, LABELS_DICT, SAMPLING_RATE, N_MELS_BAND
+from keras.models import load_model
+from config import LABELS, SAMPLING_RATE, N_MELS_BAND, FORMAT
 from preprocessing.audio_processing import AudioProcessing
 import pyaudio, wave
 import tensorflow as tf
@@ -14,42 +14,59 @@ class SpeechEmotionService:
         self.n_mels = N_MELS_BAND
         self.chunk_audio = 512
         self.channels = 1
-        self.rate_audio = SAMPLING_RATE
+        self.sampling_rate = SAMPLING_RATE
 
-    def preprocess_audio(self, audio):
+    def save_wav(self, audio_buffer, audio_path):
+        print("saving wav to " + audio_path)
+        wav = wave.open(audio_path,'wb')
+        wav.setnchannels(1)
+        wav.setsampwidth(pyaudio.PyAudio().get_sample_size(FORMAT))
+        # Ensure exactly 1 second of audio
+        audio_data = b''.join(audio_buffer)
+        samples = len(audio_data) // (2 * self.channels)  # 2 bytes per sample
+        if samples > self.sampling_rate:
+            audio_data = audio_data[:self.sampling_rate * 2 * self.channels]
+        elif samples < self.sampling_rate:
+            # Pad with silence if less than 1 second
+            padding = b'\x00' * (self.sampling_rate * 2 * self.channels - len(audio_data))
+            audio_data += padding
+        wav.setframerate(self.sampling_rate)
+        wav.writeframes(audio_data)
+        wav.close()
+    
+    def preprocess_audio(self, audio_path):
+        """load and preprocess the audio for testing the model
 
-        fix_audio, sr = self.audio_preproc.load_audio(audio_path=audio)
+        Args:
+            audio_path (str): _description_
+
+        Returns:
+            _type_: spectrogram with correct tensor shape
+        """
+        target_shape = (self.n_mels, self.n_mels)
+
+        fix_audio, sr = self.audio_preproc.load_audio(audio_path=audio_path)
         mel_spectrogram = self.audio_preproc.get_spectrogram(fix_audio)
 
-        target_shape = (self.n_mels, self.n_mels)
-        mel_spectrogram = tf.image.resize(np.expand_dims(mel_spectrogram, axis=-1), target_shape)
-        mel_spectrogram = tf.reshape(mel_spectrogram, (1,) + target_shape + (1,))
+        # Resizing  dimension for CNN (height, width, channels) QUESTO DOVREBBE FUNZIONARE CE DA TESTARLO
+        mel_spectrogram = np.expand_dims(mel_spectrogram, axis=-1)
+        resize_spec = tf.image.resize(mel_spectrogram, target_shape)
+        #mel_spectrogram = tf.image.resize(np.expand_dims(mel_spectrogram, axis=-1), target_shape)
+        rgb_spectrogram = tf.image.grayscale_to_rgb(resize_spec)
+        input_tensor = tf.expand_dims(rgb_spectrogram, axis=0)
+        #rgb_spectrogram = tf.reshape(rgb_spectrogram, (1,) + target_shape + (1,))
 
-        return mel_spectrogram
+        return input_tensor
     
-    def predict_audio(self, audio):
+    def predict_audio(self, audio_path):
         """metodo usato nell app che permette di fare la predizione dell audio registrato. Prende in input l audio, segue il processo di elaborazione;
         l input del modello saranno spectrogrammi.
         Infine ritorna la label.
-
-        Args:
-            audio (_type_): _description_
-
-        Returns:
-            str : emotion
         """
-
-        target_shape = (self.n_mels, self.n_mels)
-        # Read the audio file as a byte stream, normalize it, and convert it into a numpy array
-        fix_audio, sr = self.audio_preproc.load_audio(BytesIO(audio.read()))
-        # get spectrogram
-        mel_spectrogram = self.audio_preproc.get_spectrogram(fix_audio)
-        # Add channel dimension for CNN (height, width, channels) QUESTO DOVREBBE FUNZIONARE CE DA TESTARLO
-        mel_spectrogram = tf.image.resize(np.expand_dims(mel_spectrogram, axis=-1), target_shape)
-        mel_spectrogram = tf.reshape(mel_spectrogram, (1,) + target_shape + (1,))
-        prediction = self.model.predict(mel_spectrogram)[0]
+        img_input = self.preprocess_audio(audio_path)
+        prediction = self.model.predict(img_input)
         emotion = self.labels[np.argmax(prediction)]
-        #print(f'Speech emotion detected: {emotion}')
-        print(f'Speech emotion detected: OK')
+        print(f'Speech emotion detected: {emotion}')
+        #print(f'Speech emotion detected: OK')
 
         return emotion
