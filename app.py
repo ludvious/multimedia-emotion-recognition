@@ -8,7 +8,7 @@ from flask import Flask, render_template, Response, jsonify
 import cv2, pyaudio, os
 from datetime import datetime
 import numpy as np
-from config import FPS, RATE, CHANNELS, FORMAT, CHUNK
+from config import FPS, CHANNELS, FORMAT, CHUNK, SAMPLING_RATE
 import shutil
 
 
@@ -22,7 +22,7 @@ p_audio = None
 recorder = None
 
 face_service = FaceEmotionService(model_path='models/face/vgg_checkpoint.model.keras')
-speech_service = SpeechEmotionService(model_path='models/speech/audio_modelcheckpoint.model.keras')
+speech_service = SpeechEmotionService(model_path='models/speech/audio_modelcheckpoint.model_t4.keras')
 
 def get_camera():
     global camera
@@ -41,7 +41,7 @@ def audio_callback(in_data, frame_count, time_info, status):
     if is_recording and recorder:
         recorder.audio_buffer.append(in_data)
         # Check if we have collected 1 second of audio
-        if len(recorder.audio_buffer) * len(in_data) >= (RATE * 2 * CHANNELS):
+        if len(recorder.audio_buffer) * len(in_data) >= (SAMPLING_RATE * 2 * CHANNELS):
             recorder.save_chunk()
     return (in_data, pyaudio.paContinue)
 
@@ -55,8 +55,9 @@ def generate_frames():
                 
             if is_recording and recorder:
                 recorder.frame_buffer.append(frame.copy())
+                emotion = recorder.face_service.predict_frame(frame)
                 #emotion = em_service.predict_frame(frame) # use predict_frame_landmark method 
-                #recorder.emotion_buffer.append(emotion)
+                recorder.emotion_buffer.append(emotion)
                 
             # Convert frame to jpg for streaming
             ret, buffer = cv2.imencode('.jpg', frame)
@@ -65,7 +66,7 @@ def generate_frames():
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
             
-            time.sleep(1/FPS)
+            #time.sleep(1/FPS)
     except GeneratorExit:
         release_camera()
 
@@ -91,13 +92,6 @@ def stream_service():
 def video_feed():
     return Response(generate_frames(),mimetype='multipart/x-mixed-replace; boundary=frame')
 
-'''# funzione che genera uno stream di immagini video da una camera
-def start_stream(camera):
-    while True:
-        frame = camera.predict()
-
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')'''
 
 @app.route('/process_recording')
 def process_recording():
@@ -143,7 +137,7 @@ def process_recording():
         p_audio = pyaudio.PyAudio()
         audio_stream = p_audio.open(format=FORMAT,
                                   channels=CHANNELS,
-                                  rate=RATE,
+                                  rate=SAMPLING_RATE,
                                   input=True,
                                   frames_per_buffer=CHUNK,
                                   stream_callback=audio_callback)

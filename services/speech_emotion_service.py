@@ -1,4 +1,4 @@
-from keras.models import load_model
+from keras.api.models import load_model
 from config import LABELS, SAMPLING_RATE, N_MELS_BAND, FORMAT
 from preprocessing.audio_processing import AudioProcessing
 import pyaudio, wave
@@ -66,7 +66,8 @@ class SpeechEmotionService:
         img_input = self.preprocess_audio(audio_path)
         prediction = self.model.predict(img_input)
         emotion = self.labels[np.argmax(prediction)]
-        print(f'Speech emotion detected: {emotion}')
+        perc = round(float(np.max((prediction))*100), 1)
+        print(f'Speech emotion detected: {emotion} {perc}')
         #print(f'Speech emotion detected: OK')
 
-        return emotion
+        return emotion, perc
