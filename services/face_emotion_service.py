@@ -37,11 +37,11 @@ class FaceEmotionService:
                 print(f'Face emotion detected: {emotion} %{perc}')
                 cvtext = f'{emotion} %{perc}'
                 if perc > 55:
-                    #cv2.putText(frame, cvtext, (x, y - 10), cv2.cv2.FONT_HERSHEY_SIMPLEX_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                    #cv2.putText(frame, cvtext, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
                     return emotion
                 else:
                     return 'Unknow'
-                    #cv2.putText(frame, 'No Emotion Detected', (x, y - 10), cv2.cv2.FONT_HERSHEY_SIMPLEX_HERSHEY_COMPLEX, 0.9, (0, 255, 0), 2)
+                    #cv2.putText(frame, 'No Emotion Detected', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX_HERSHEY, 0.9, (0, 255, 0), 2)
 
     def predict_frame_landmarks(self, frame, show=False):
         

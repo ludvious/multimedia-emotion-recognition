@@ -27,7 +27,6 @@ class StreamService:
         
     def save_chunk(self):
         if not self.frame_buffer or not self.audio_buffer or not self.emotion_buffer:
-            print('no save chunk')
             return
             
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -71,7 +70,7 @@ class StreamService:
         self.chunks_info.append(chunk_info)
         
         # Start new chunk
-        time.sleep(1)
+        #time.sleep(0.5)
         self.start_new_chunk()
         
         return chunk_info

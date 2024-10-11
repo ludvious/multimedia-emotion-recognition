@@ -58,6 +58,17 @@ def generate_frames():
                 emotion = recorder.face_service.predict_frame(frame)
                 #emotion = em_service.predict_frame(frame) # use predict_frame_landmark method 
                 recorder.emotion_buffer.append(emotion)
+
+                # Draw recording status
+                cv2.putText(frame, "Recording...", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 2)
+                if recorder.chunks_info:
+                    last_chunk = recorder.chunks_info[-1]
+                    # Draw timestamp
+                    cv2.putText(frame, f"Time: {last_chunk['timestamp']}", (10, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                    # Draw face emotion
+                    cv2.putText(frame, f"Last Face: {last_chunk['face_emotion_predicted']}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                    # Draw audio emotion
+                    cv2.putText(frame, f"Speech: {last_chunk['emotion_audio']}", (10, 190), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
                 
             # Convert frame to jpg for streaming
             ret, buffer = cv2.imencode('.jpg', frame)
@@ -66,7 +77,7 @@ def generate_frames():
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
             
-            #time.sleep(1/FPS)
+            time.sleep(1/FPS)
     except GeneratorExit:
         release_camera()
 
