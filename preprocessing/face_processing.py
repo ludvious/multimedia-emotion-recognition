@@ -1,6 +1,7 @@
 from keras._tf_keras.keras.preprocessing.image import ImageDataGenerator
 import numpy as np
-import dlib, os, cv2
+import os, cv2
+#import dlib
 
 def process_and_augmentation_face_data():
     train_datagen = ImageDataGenerator(

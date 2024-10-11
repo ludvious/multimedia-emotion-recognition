@@ -1,16 +1,16 @@
 import cv2, time, os
 from datetime import datetime
-import numpy as np
-from keras.api.preprocessing.image import img_to_array
-from preprocessing.audio_processing import AudioProcessing
-from services.speech_emotion_service import SpeechEmotionService
 import pyaudio, wave
-import numpy as np
-from io import BytesIO
-from config import RATE, CHANNELS, FORMAT, RECORD_SECONDS
+from preprocessing.audio_processing import AudioProcessing
+from services.face_emotion_service import FaceEmotionService
+from services.speech_emotion_service import SpeechEmotionService
+from config import SAMPLING_RATE, CHANNELS, FORMAT, RECORD_SECONDS
 
 class StreamService:
-    def __init__(self):
+    def __init__(self, face_service: FaceEmotionService, speech_service: SpeechEmotionService):
+        self.face_service = face_service
+        self.speech_service = speech_service
+        self.audio_proc = AudioProcessing()
         self.frame_buffer = []
         self.emotion_buffer = []
         self.audio_buffer = []
@@ -31,43 +31,28 @@ class StreamService:
         chunk_dir = f'recordings/chunk_{timestamp}'
         os.makedirs(chunk_dir, exist_ok=True)
         
-        # Save frames
+        # List for save temp frames, face emotion and speech emotion
         frames_saved = []
-        emotion_saved = []
+        face_emotion = []
+        speech_emotion = []
+
         for i, frame in enumerate(self.frame_buffer):
             frame_path = f'{chunk_dir}/frame_{i:03d}.jpg'
             cv2.imwrite(frame_path, frame)
             frames_saved.append(f'frame_{i:03d}.jpg')
-        #TODO aggiungere logica per mandare i frame al modello per prediction
-        for j, emotion in enumerate(self.emotion_buffer):
-            emotion_saved.append(emotion)
-        emotion_predicted = max(emotion_saved,key=emotion_saved.count)
+            #TODO SPOSTARE QUI LA LOGICA PER PREDICTION FACE --------------- FATTO , FARE CHECK SE FUNZIONA
+            face_prediction = self.face_service.predict_frame(frame) # use predict_frame_landmark method 
+            face_emotion.append(face_prediction)
+        
+        emotion_predicted = max(face_emotion, key=face_emotion.count) #pick the most occurred emotion detected from frame in 1 second 
 
         # Save audio (exactly 1 second)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         audio_path = f'{chunk_dir}/audio_{timestamp}.wav'
-        wave_file = wave.open(audio_path, 'wb')
-        wave_file.setnchannels(CHANNELS)
-        wave_file.setsampwidth(pyaudio.PyAudio().get_sample_size(FORMAT))
-        wave_file.setframerate(RATE)
-        
-        # Ensure exactly one second of audio
-        audio_data = b''.join(self.audio_buffer)
-        samples = len(audio_data) // (2 * CHANNELS)  # 2 bytes per sample
-        if samples > RATE:
-            audio_data = audio_data[:RATE * 2 * CHANNELS]
-        elif samples < RATE:
-            # Pad with silence if less than 1 second
-            padding = b'\x00' * (RATE * 2 * CHANNELS - len(audio_data))
-            audio_data += padding
-            
-        wave_file.writeframes(audio_data)
-        wave_file.close()
+        self.speech_service.save_wav(self.audio_buffer, audio_path)
         #prediction audio emotion
-        model_audio_path = 'path'
-        #speech_service = SpeechEmotionService(model_audio_path)
-        #audio_emotion = speech_service.predict()
-        audio_emotion = 'TEST'
+        audio_emotion = self.speech_service.predict_audio(audio_path)
+        #audio_emotion = 'TEST'
         
         # Record chunk information
         chunk_info = {
@@ -75,13 +60,13 @@ class StreamService:
             'directory': chunk_dir,
             'frames_count': len(frames_saved),
             'frames': frames_saved,
-            'face_emotion_count': len(emotion_saved),
-            'face_emotion_captured': emotion_saved,
+            'face_emotion_count': len(face_emotion),
+            'face_emotion_captured': face_emotion,
             'face_emotion_predicted': emotion_predicted,
             'audio_file': f'audio_{timestamp}.wav',
             'emotion_audio': audio_emotion,
             'audio_duration': RECORD_SECONDS,
-            'audio_sample_rate': RATE,
+            'audio_sample_rate': SAMPLING_RATE,
             'audio_channels': CHANNELS
         }
         self.chunks_info.append(chunk_info)

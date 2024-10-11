@@ -1,5 +1,6 @@
 from flask import Flask, render_template, Response, request, jsonify
 from services.face_emotion_service import FaceEmotionService
+from services.speech_emotion_service import SpeechEmotionService
 from services.stream_service import StreamService
 import os, random, string, time
 from datetime import datetime
@@ -19,6 +20,9 @@ camera = None
 audio_stream = None
 p_audio = None
 recorder = None
+
+face_service = FaceEmotionService(model_path='models/face/vgg_checkpoint.model.keras')
+speech_service = SpeechEmotionService(model_path='models/speech/audio_modelcheckpoint.model.keras')
 
 def get_camera():
     global camera
@@ -43,8 +47,6 @@ def audio_callback(in_data, frame_count, time_info, status):
 
 def generate_frames():
     camera = get_camera()
-    model_path = 'models/face/vgg_checkpoint.model.keras'
-    em_service = FaceEmotionService(model_path=model_path)
     try:
         while True:
             success, frame = camera.read()
@@ -53,8 +55,8 @@ def generate_frames():
                 
             if is_recording and recorder:
                 recorder.frame_buffer.append(frame.copy())
-                emotion = em_service.predict_frame(frame) # use predict_frame_landmark method 
-                recorder.emotion_buffer.append(emotion)
+                #emotion = em_service.predict_frame(frame) # use predict_frame_landmark method 
+                #recorder.emotion_buffer.append(emotion)
                 
             # Convert frame to jpg for streaming
             ret, buffer = cv2.imencode('.jpg', frame)
@@ -134,7 +136,7 @@ def process_recording():
     # Start recording if not active
     else:
         is_recording = True
-        recorder = StreamService()
+        recorder = StreamService(face_service, speech_service)
         recorder.start_new_chunk()
         
         # Start audio stream

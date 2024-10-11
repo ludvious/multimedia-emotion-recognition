@@ -1,4 +1,5 @@
-import cv2, dlib
+import cv2
+#import dlib
 import numpy as np
 from keras.api.models import load_model
 from keras.api.preprocessing.image import img_to_array
@@ -9,8 +10,8 @@ class FaceEmotionService:
     def __init__(self, model_path: str):
         self.model = load_model(model_path)
         self.face_detector = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        self.landmark_detector = dlib.get_frontal_face_detector()
-        self.landmark_predictor = dlib.shape_predictor('models/dlib/shape_predictor_68_face_landmarks.dat')
+        #self.landmark_detector = dlib.get_frontal_face_detector()
+        #self.landmark_predictor = dlib.shape_predictor('models/dlib/shape_predictor_68_face_landmarks.dat')
         self.labels = LABELS
         self.tf_oneddnn = TF_ENABLE_ONEDNN_OPTS
 
