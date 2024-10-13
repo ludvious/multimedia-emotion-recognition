@@ -122,14 +122,19 @@ class AudioProcessing:
         :return: Percorso del file immagine salvato
         """
         matplotlib.use('Agg')
-        output_folder = Path('data/speech/spectrogram/')
         
         audio_file_path = Path(audio_path)
+        
+        if inference==False:
+            output_folder = Path('data/speech/spectrogram/')
+            label = audio_file_path.parent.name
+            spec_label_folder = output_folder / label  # The `/` operator works with pathlib to join paths
+            spec_label_folder.mkdir(parents=True, exist_ok=True) # => spectrogram/label/
+        
         label = audio_file_path.parent.name
-        spec_label_folder = output_folder / label  # The `/` operator works with pathlib to join paths
+        #spec_label_folder = output_folder / label  # The `/` operator works with pathlib to join paths
         # Create subfolder for the label if it doesn't exist
-        spec_label_folder.mkdir(parents=True, exist_ok=True) # => spectrogram/label/
-
+        #spec_label_folder.mkdir(parents=True, exist_ok=True) # => spectrogram/label/
         y, sr = self.load_audio(audio_file_path)
         file_name = os.path.splitext(os.path.basename(audio_path))[0] # pick the same name file
         # Genera lo spettrogramma

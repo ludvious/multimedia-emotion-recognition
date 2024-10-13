@@ -33,7 +33,6 @@ class StreamService:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         chunk_dir = f'{self.output_folder}/chunk_{timestamp}'
         os.makedirs(chunk_dir, exist_ok=True)
-        
         # List for save temp frames, face emotion and speech emotion
         frames_saved = []
         face_emotion = []
