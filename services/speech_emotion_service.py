@@ -1,4 +1,5 @@
 from keras.api.models import load_model
+from keras.api.preprocessing.image import load_img, img_to_array
 from config import LABELS, SAMPLING_RATE, N_MELS_BAND, FORMAT
 from preprocessing.audio_processing import AudioProcessing
 import pyaudio, wave
@@ -58,16 +59,29 @@ class SpeechEmotionService:
 
         return input_tensor
     
-    def predict_audio(self, audio_path):
+    def preprocess_audio_edit(self, audio_path, spec_output_folder):
+
+        spec_img_path = self.audio_preproc.audio_to_spectrogram_img(audio_path, inference=True, inference_ouput_folder=spec_output_folder)
+        img = load_img(spec_img_path, target_size=(128, 128))
+        img_array = img_to_array(img)
+        img_array = np.expand_dims(img_array, axis=0)
+        img_array = img_array / 255.0
+
+        return img_array
+    
+    def predict_audio(self, audio_path, spec_output_folder):
         """metodo usato nell app che permette di fare la predizione dell audio registrato. Prende in input l audio, segue il processo di elaborazione;
         l input del modello saranno spectrogrammi.
         Infine ritorna la label.
         """
-        img_input = self.preprocess_audio(audio_path)
-        prediction = self.model.predict(img_input)
+        img_array = self.preprocess_audio_edit(audio_path, spec_output_folder)
+        prediction = self.model.predict(img_array)
         emotion = self.labels[np.argmax(prediction)]
         perc = round(float(np.max((prediction))*100), 1)
-        print(f'Speech emotion detected: {emotion} {perc}')
+        emotion_perc = f'{emotion} %{perc}'
+        print(f'Speech emotion detected: {emotion_perc}')
         #print(f'Speech emotion detected: OK')
-
-        return emotion, perc
+        if perc > 55:
+            return emotion_perc
+        else:
+            return 'Unknow'

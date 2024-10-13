@@ -112,7 +112,7 @@ class AudioProcessing:
 
         return normalized_spectrogram
     
-    def audio_to_spectrogram_img(self, audio_path, label, save_img=True):
+    def audio_to_spectrogram_img(self, audio_path, inference: bool, save_img=True, inference_ouput_folder=None):
         """
         Converte un file audio in un spettrogramma e lo salva come img.
         Questa funzione é utile per creare tutti gli spectrogrammi e visualizzare quelli da scartare.
@@ -121,8 +121,11 @@ class AudioProcessing:
         :param output_image_path: Percorso del file immagine in output. Se non specificato, usa lo stesso nome dell'audio.
         :return: Percorso del file immagine salvato
         """
-        audio_file_path = Path(audio_path)
+        matplotlib.use('Agg')
         output_folder = Path('data/speech/spectrogram/')
+        
+        audio_file_path = Path(audio_path)
+        label = audio_file_path.parent.name
         spec_label_folder = output_folder / label  # The `/` operator works with pathlib to join paths
         # Create subfolder for the label if it doesn't exist
         spec_label_folder.mkdir(parents=True, exist_ok=True) # => spectrogram/label/
@@ -132,8 +135,13 @@ class AudioProcessing:
         # Genera lo spettrogramma
         s_dB = self.get_spectrogram(audio_data=y)
         if save_img:
-            # Salva lo spettrogramma come immagine
-            output_path = spec_label_folder / f'{file_name}.png'
+            # Salva lo spettrogramma come immagine nel path specifico; caso di run dell app oppure caso in cui genero il dataset per il training
+            if inference==True:
+                inference_ouput_folder = Path(inference_ouput_folder)
+                inference_ouput_folder.mkdir(parents=True, exist_ok=True)
+                output_path = inference_ouput_folder / f'{file_name}.png'
+            else:
+                output_path = spec_label_folder / f'{file_name}.png'
             # Save the Mel spectrogram as an image
             plt.figure(figsize=(5,5))
             librosa.display.specshow(s_dB, sr=sr, hop_length=self.hop_length, x_axis='time', y_axis='mel', cmap='viridis')
@@ -141,8 +149,9 @@ class AudioProcessing:
             plt.tight_layout()
             plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
             plt.close()
-            #matplotlib.image.imsave(output_path, spec)
-
+        
+        return output_path
+    
     def gen_mel_spectrogram_images(self, audio_file_path: str):
         """metodo per generare le immagini spettogrammi dei file audio e salvarle(vengono eseguito step 1 e 2 descritti qui):
         1 - carico i file audio e li pre elaboro
