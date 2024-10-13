@@ -127,7 +127,9 @@
             recordingInfo.style.display = 'block';
             recordingInfo.innerHTML = `
                 <h3>Recording Summary:</h3>
-                <p>Total Chunks: ${info.total_chunks}</p>
+                <p>Total Interval: ${info.total_chunks} seconds</p>
+                <p>Face Emotion Interval: ${info.face_emotion_recording}</p>
+                <p>Speech Emotion Interval: ${info.speech_emotion_recording}</p>
                 <h4>Chunks Information:</h4>
                 ${info.chunks.map(chunk => `
                     <div style="margin-bottom: 10px; padding: 5px; border-bottom: 1px solid #eee;">

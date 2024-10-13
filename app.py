@@ -27,7 +27,7 @@ speech_service = SpeechEmotionService(model_path='models/speech/audio_modelcheck
 def get_camera():
     global camera
     if camera is None:
-        camera = cv2.VideoCapture(1)
+        camera = cv2.VideoCapture(0)
         camera.set(cv2.CAP_PROP_FPS, FPS)
     return camera
 
@@ -124,6 +124,15 @@ def process_recording():
         if recorder and (recorder.frame_buffer or recorder.audio_buffer):
             final_chunk = recorder.save_chunk()
         
+        all_face_emotion_recording = []
+        all_speech_emotion_recording = []
+        for chunk in recorder.chunks_info:
+            emotion_face = chunk['face_emotion_predicted']
+            emotion_speech = chunk['emotion_audio']
+            all_face_emotion_recording.append(emotion_face)
+            all_speech_emotion_recording.append(emotion_speech)
+        face_emotion_recording = max(all_face_emotion_recording, key=all_face_emotion_recording.count) #pick the most occurred emotion during all recording
+        speech_emotion_recording = max(all_speech_emotion_recording, key=all_speech_emotion_recording.count) #pick the most occurred emotion during all recording
         # Prepare response with all recording information
         response_data = {
             'status': 'success',
@@ -132,6 +141,8 @@ def process_recording():
             'timestamp': datetime.now().isoformat(),
             'recording_info': {
                 'total_chunks': len(recorder.chunks_info),
+                'face_emotion_recording': face_emotion_recording,
+                'speech_emotion_recording': speech_emotion_recording,
                 'chunks': recorder.chunks_info
             }
         }
@@ -142,6 +153,7 @@ def process_recording():
     else:
         is_recording = True
         recorder = StreamService(face_service, speech_service)
+        #time.sleep(1)
         recorder.start_new_chunk()
         
         # Start audio stream
@@ -161,11 +173,11 @@ def process_recording():
             'timestamp': datetime.now().isoformat()
         })
     
-@app.teardown_appcontext
+'''@app.teardown_appcontext
 def delete_temporary_path(exception=None):
     if os.path.exists('recordings'):
         shutil.rmtree('recordings')  # Deletes the directory and its contents
-        print(f"Deleted recordings path on teardown.")
+        print(f"Deleted recordings path on teardown.")'''
 
 if __name__ == '__main__':
     if not os.path.exists('recordings'):

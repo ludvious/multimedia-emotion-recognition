@@ -16,6 +16,7 @@ class StreamService:
         self.audio_buffer = []
         self.chunks_info = []
         self.last_save_time = time.time()
+        self.output_folder = 'recordings'
         self.current_chunk_start_time = None
         
     def start_new_chunk(self): #chunk is a section of recording length 1 second
@@ -30,7 +31,7 @@ class StreamService:
             return
             
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        chunk_dir = f'recordings/chunk_{timestamp}'
+        chunk_dir = f'{self.output_folder}/chunk_{timestamp}'
         os.makedirs(chunk_dir, exist_ok=True)
         
         # List for save temp frames, face emotion and speech emotion
@@ -51,7 +52,7 @@ class StreamService:
         audio_path = f'{chunk_dir}/audio_{timestamp}.wav'
         self.speech_service.save_wav(self.audio_buffer, audio_path)
         #prediction audio emotion
-        audio_emotion, perc = self.speech_service.predict_audio(audio_path)
+        audio_emotion = self.speech_service.predict_audio(audio_path=audio_path, spec_output_folder=self.output_folder)
         #audio_emotion = 'TEST'
         
         # Record chunk information
@@ -61,11 +62,10 @@ class StreamService:
             'frames_count': len(frames_saved),
             'frames': frames_saved,
             'face_emotion_count': len(face_emotion),
-            'face_emotion_captured': face_emotion,
+            'frame_face_emotion_captured': face_emotion,
             'face_emotion_predicted': emotion_predicted,
             'audio_file': f'audio_{timestamp}.wav',
-            'emotion_audio': f'{audio_emotion} {perc}',
-            'audio_duration': RECORD_SECONDS,
+            'emotion_audio': audio_emotion,
         }
         self.chunks_info.append(chunk_info)
         
