@@ -14,16 +14,16 @@ def create_face_dataset(data_path: str, input_shape, batch_size):
 
     return train_gen, val_gen
 
-def load_features_and_labels(path):
+def load_features_and_labels(data_path, output_folder='data/face_landmarks/'):
     '''
     method for create features and labels with landmarks from face data path
     '''
     features = []
     labels = []
-    emotions = {'angry': 0, 'disgust': 1, 'fear': 2, 'happy': 3, 'neutral': 4, 'sad': 5, 'surprise': 6}
+    emotion_folders = [f for f in os.listdir(data_path) if os.path.isdir(os.path.join(data_path, f))]
     
-    for emotion in emotions.keys():
-        emotion_dir = os.path.join(path, emotion)
+    for emotion_index, emotion in enumerate(emotion_folders):
+        emotion_dir = os.path.join(data_path, emotion)
         if os.path.isdir(emotion_dir):
             for img_name in os.listdir(emotion_dir):
                 img_path = os.path.join(emotion_dir, img_name)
@@ -33,10 +33,20 @@ def load_features_and_labels(path):
                 processed_landmarks = preprocess_landmarks(face_landmarks)
                 if face_landmarks is not None:
                     features.append(processed_landmarks)
-                    labels.append(emotions[emotion])
+                    labels.append(emotion_index)
             print(f"Processed {len(features)} features for emotion: {emotion}")
-    
-    return np.array(features), np.array(labels)
+    # Save the processed data
+    # Convert to numpy arrays
+    X = np.array(features)
+    y = np.array(labels)
+
+    np.save(os.path.join(output_folder, 'X_landmarks.npy'), X)
+    np.save(os.path.join(output_folder, 'y_labels.npy'), y)
+
+    print(f"Processed data saved to {output_folder}")
+    print(f"X shape: {X.shape}, y shape: {y.shape}")
+
+    return X, y
     
 def create_audio_dataset(audio_file_path: str):
         """

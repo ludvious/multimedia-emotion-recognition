@@ -21,13 +21,13 @@ audio_stream = None
 p_audio = None
 recorder = None
 
-face_service = FaceEmotionService(model_path='models/face/vgg_checkpoint.model.keras')
+face_service = FaceEmotionService(model_path='models/face/resnet50_checkpoint.model.keras')
 speech_service = SpeechEmotionService(model_path='models/speech/audio_modelcheckpoint.model_t4.keras')
 
 def get_camera():
     global camera
     if camera is None:
-        camera = cv2.VideoCapture(0)
+        camera = cv2.VideoCapture(1)
         camera.set(cv2.CAP_PROP_FPS, FPS)
     return camera
 
@@ -55,7 +55,7 @@ def generate_frames():
                 
             if is_recording and recorder:
                 recorder.frame_buffer.append(frame.copy())
-                emotion = recorder.face_service.predict_frame(frame)
+                emotion = recorder.face_service.predict_frame_resnet(frame)
                 #emotion = em_service.predict_frame(frame) # use predict_frame_landmark method 
                 recorder.emotion_buffer.append(emotion)
 

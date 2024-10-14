@@ -12,6 +12,8 @@ class FaceEmotionService:
         self.face_detector = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
         #self.landmark_detector = dlib.get_frontal_face_detector()
         #self.landmark_predictor = dlib.shape_predictor('models/dlib/shape_predictor_68_face_landmarks.dat')
+        self.img_dim = (48,48)
+        self.img_dim_resnet = (224,224)
         self.labels = LABELS
         self.tf_oneddnn = TF_ENABLE_ONEDNN_OPTS
 
@@ -24,7 +26,7 @@ class FaceEmotionService:
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
             
             roi_gray = gray[y:y + h, x:x + w]
-            roi_gray = cv2.resize(roi_gray, (48, 48), interpolation=cv2.INTER_AREA)
+            roi_gray = cv2.resize(roi_gray, self.img_dim, interpolation=cv2.INTER_AREA)
             if np.sum([roi_gray]) != 0:
                 roi_gray = roi_gray.astype('float') / 255.0
                 roi_gray = img_to_array(roi_gray)
@@ -32,6 +34,34 @@ class FaceEmotionService:
                 roi_gray = np.expand_dims(roi_gray, axis=-1)
 
                 prediction = self.model.predict(roi_gray)[0]
+                emotion = self.labels[np.argmax(prediction)]
+                perc = round((max(prediction)*100), 1)
+                print(f'Face emotion detected: {emotion} %{perc}')
+                cvtext = f'{emotion} %{perc}'
+                if perc > 55:
+                    #cv2.putText(frame, cvtext, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                    return emotion
+                else:
+                    return 'Unknow'
+                    #cv2.putText(frame, 'No Emotion Detected', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX_HERSHEY, 0.9, (0, 255, 0), 2)
+    
+    def predict_frame_resnet(self, frame, show=False):
+        
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        faces = self.face_detector.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+
+        for (x, y, w, h) in faces:
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            
+            roi_rgb = frame[y:y + h, x:x + w]
+            roi_rgb = cv2.resize(roi_rgb, self.img_dim_resnet, interpolation=cv2.INTER_AREA)
+            if np.sum([roi_rgb]) != 0:
+                roi_rgb = roi_rgb.astype('float') / 255.0
+                roi_rgb = img_to_array(roi_rgb)
+                roi_rgb = np.expand_dims(roi_rgb, axis=0)
+                roi_rgb = np.expand_dims(roi_rgb, axis=-1)
+
+                prediction = self.model.predict(roi_rgb)[0]
                 emotion = self.labels[np.argmax(prediction)]
                 perc = round((max(prediction)*100), 1)
                 print(f'Face emotion detected: {emotion} %{perc}')

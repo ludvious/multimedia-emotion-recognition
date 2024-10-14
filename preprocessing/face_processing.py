@@ -26,7 +26,7 @@ def process_and_augmentation_face_data():
 
     return train_datagen, validation_datagen, test_datagen
 
-def process_split_face_data(data_path, train_datagen, validation_datagen, input_shape, batch_size):
+def process_split_face_data(data_path, train_datagen, validation_datagen, test_datagen, input_shape, batch_size):
 
     train_generator = train_datagen.flow_from_directory(
         directory = f'{data_path}/train',    # Directory containing the training data
@@ -42,7 +42,7 @@ def process_split_face_data(data_path, train_datagen, validation_datagen, input_
     validation_generator = validation_datagen.flow_from_directory(
         directory = f'{data_path}/train',     # Directory containing the validation data
         target_size = input_shape[:2],          # Resizes all images to 48x48 pixels
-        batch_size = 64,                 # Number of images per batch
+        batch_size = batch_size,                 # Number of images per batch
         color_mode = "grayscale",        # Converts the images to grayscale
         class_mode = "categorical",      # Classifies the images into 7 categories
         subset = "validation",            # Uses the validation subset of the data
@@ -50,10 +50,10 @@ def process_split_face_data(data_path, train_datagen, validation_datagen, input_
         seed = 12
     )
 
-    test_generator = validation_datagen.flow_from_directory(
+    test_generator = test_datagen.flow_from_directory(
         directory = f'{data_path}/test',     # Directory containing the validation data
         target_size = input_shape[:2],          # Resizes all images to 48x48 pixels
-        batch_size = 64,                 # Number of images per batch
+        batch_size = batch_size,                 # Number of images per batch
         color_mode = "grayscale",        # Converts the images to grayscale
         class_mode = "categorical",      # Classifies the images into 7 categories
         subset = "validation",            # Uses the validation subset of the data
