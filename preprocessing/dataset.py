@@ -14,7 +14,7 @@ def create_face_dataset(data_path: str, input_shape, batch_size):
 
     return train_gen, val_gen
 
-def load_features_and_labels(data_path, output_folder='data/face_landmarks/'):
+def load_features_and_labels(data_path, landmark_detector, landmark_predictor, output_folder='data/face_landmarks/'):
     '''
     method for create features and labels with landmarks from face data path
     '''
@@ -22,19 +22,19 @@ def load_features_and_labels(data_path, output_folder='data/face_landmarks/'):
     labels = []
     emotion_folders = [f for f in os.listdir(data_path) if os.path.isdir(os.path.join(data_path, f))]
     
-    for emotion_index, emotion in enumerate(emotion_folders):
-        emotion_dir = os.path.join(data_path, emotion)
-        if os.path.isdir(emotion_dir):
-            for img_name in os.listdir(emotion_dir):
-                img_path = os.path.join(emotion_dir, img_name)
-                image = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-                image = cv2.resize(image, (48, 48))  # Resize image to 48x48 pixels
-                face_landmarks = get_landmarks_from_image(image)
-                processed_landmarks = preprocess_landmarks(face_landmarks)
-                if face_landmarks is not None:
-                    features.append(processed_landmarks)
-                    labels.append(emotion_index)
-            print(f"Processed {len(features)} features for emotion: {emotion}")
+    for folder_index, folder in enumerate(emotion_folders):
+        folder_dir = os.path.join(data_path, folder)
+        if os.path.isdir(folder_dir):
+            for emotion in os.listdir(folder_dir):
+                emotion_dir = os.path.join(folder_dir, emotion)
+                for file_path in os.listdir(emotion_dir):
+                    image_path = os.path.join(emotion_dir, file_path)
+                    face_landmarks = get_landmarks_from_image(image_path, landmark_detector, landmark_predictor)
+                    processed_landmarks = preprocess_landmarks(face_landmarks)
+                    if processed_landmarks is not None:
+                        features.append(processed_landmarks)
+                        labels.append(emotion)
+                print(f"Processed {len(features)} features for emotion: {emotion}")
     # Save the processed data
     # Convert to numpy arrays
     X = np.array(features)
@@ -116,10 +116,10 @@ def process_audio_data_generator(data_path, batch_size, input_shape):
 
 
 # Load train and test features
-train_dir = "/content/train"
+'''train_dir = "/content/train"
 val_dir = "/content/test"
 train_features, train_labels = load_features_and_labels(train_dir)
-val_features, val_labels = load_features_and_labels(val_dir)
+val_features, val_labels = load_features_and_labels(val_dir)'''
 
 #train_landmark = get_face_landmarks(train_features)
 #val_landmark = get_face_landmarks(val_features)
