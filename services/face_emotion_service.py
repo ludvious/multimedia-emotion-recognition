@@ -31,7 +31,7 @@ class FaceEmotionService:
                 roi_gray = roi_gray.astype('float') / 255.0
                 roi_gray = img_to_array(roi_gray)
                 roi_gray = np.expand_dims(roi_gray, axis=0)
-                roi_gray = np.expand_dims(roi_gray, axis=-1)
+                roi_gray = np.expand_dims(roi_gray, axis=-1) #channel grayscale
 
                 prediction = self.model.predict(roi_gray)[0]
                 emotion = self.labels[np.argmax(prediction)]
@@ -47,26 +47,25 @@ class FaceEmotionService:
     
     def predict_frame_resnet(self, frame, show=False):
         
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = self.face_detector.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        faces = self.face_detector.detectMultiScale(rgb, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
 
         for (x, y, w, h) in faces:
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
             
-            roi_rgb = frame[y:y + h, x:x + w]
+            roi_rgb = rgb[y:y + h, x:x + w]
             roi_rgb = cv2.resize(roi_rgb, self.img_dim_resnet, interpolation=cv2.INTER_AREA)
             if np.sum([roi_rgb]) != 0:
                 roi_rgb = roi_rgb.astype('float') / 255.0
                 roi_rgb = img_to_array(roi_rgb)
                 roi_rgb = np.expand_dims(roi_rgb, axis=0)
-                roi_rgb = np.expand_dims(roi_rgb, axis=-1)
 
                 prediction = self.model.predict(roi_rgb)[0]
                 emotion = self.labels[np.argmax(prediction)]
                 perc = round((max(prediction)*100), 1)
                 print(f'Face emotion detected: {emotion} %{perc}')
                 cvtext = f'{emotion} %{perc}'
-                if perc > 55:
+                if perc > 51:
                     #cv2.putText(frame, cvtext, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
                     return emotion
                 else:

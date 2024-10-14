@@ -81,7 +81,7 @@ class SpeechEmotionService:
         emotion_perc = f'{emotion} %{perc}'
         print(f'Speech emotion detected: {emotion_perc}')
         #print(f'Speech emotion detected: OK')
-        if perc > 55:
+        if perc > 51:
             return emotion_perc
         else:
             return 'Unknow'
