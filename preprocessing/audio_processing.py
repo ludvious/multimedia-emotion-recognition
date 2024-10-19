@@ -1,18 +1,14 @@
 import os, librosa
 from librosa.util import fix_length
 import numpy as np
-from moviepy.editor import *
 from pathlib import Path
 import matplotlib
 import matplotlib.pyplot as plt
-import tensorflow as tf
 from pydub import AudioSegment
 from pydub.utils import make_chunks
 from scipy.io import wavfile
 from config import SAMPLING_RATE, TARGET_RATE, CHANNELS, MIN_AUDIO_LEN, MAX_AUDIO_LEN, N_MELS_BAND, HOP_LENGTH, OVERLAP_RATIO, FORMAT
 from .utils import count_files
-import wave, pyaudio
-from datetime import datetime
 
 class AudioProcessing:
     def __init__(self) -> None:

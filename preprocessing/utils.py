@@ -1,8 +1,6 @@
 import pyaudio, wave, librosa, os
 import numpy as np
 import matplotlib as plt
-from pytube import YouTube
-import moviepy.editor as mp
 from config import SAMPLING_RATE
 
 def add_folders(start_path, labels):
