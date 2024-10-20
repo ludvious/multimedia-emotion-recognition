@@ -1,4 +1,4 @@
-import pyaudio, wave, librosa, os
+import librosa, os, zipfile
 import numpy as np
 import matplotlib as plt
 from config import SAMPLING_RATE
@@ -33,3 +33,7 @@ def plot_spec(audio_data, sr, name):
     plt.colorbar(format='%+02.0f dB')
     plt.savefig('figs/{}.png'.format(name))
     plt.clf()
+
+def unzip(filepath, outdir):
+    with zipfile.ZipFile(filepath, "r") as zip_ref:
+        zip_ref.extractall(outdir)

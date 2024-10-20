@@ -3,7 +3,7 @@ import numpy as np
 import os, cv2
 #import dlib
 
-def process_and_augmentation_face_data():
+def preprocess_face_dataset(data_path, input_shape, batch_size):
     train_datagen = ImageDataGenerator(
         rotation_range = 10,
         width_shift_range = 0.1,        # Randomly shift the width of images by up to 10%
@@ -23,10 +23,6 @@ def process_and_augmentation_face_data():
     test_datagen = ImageDataGenerator(
         rescale = 1./255,               # Rescale pixel values to be between 0 and 1
     )
-
-    return train_datagen, validation_datagen, test_datagen
-
-def process_split_face_data(data_path, train_datagen, validation_datagen, test_datagen, input_shape, batch_size):
 
     train_generator = train_datagen.flow_from_directory(
         directory = f'{data_path}/train',    # Directory containing the training data
