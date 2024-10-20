@@ -16,7 +16,7 @@ MAX_AUDIO_LEN = 1 #second
 OVERLAP_RATIO = 0.5
 
 SAMPLING_RATE = 44100 #rate setting when recording audio
-CHANNELS = 1
+CHANNELS = 1 # is the mono channels
 FORMAT = pyaudio.paInt16
 CHUNK = SAMPLING_RATE  # Set chunk size to exactly one second of audio
 RECORD_SECONDS = 1

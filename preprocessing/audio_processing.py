@@ -6,9 +6,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from pydub import AudioSegment
 from pydub.utils import make_chunks
-from scipy.io import wavfile
 from config import SAMPLING_RATE, TARGET_RATE, CHANNELS, MIN_AUDIO_LEN, MAX_AUDIO_LEN, N_MELS_BAND, HOP_LENGTH, OVERLAP_RATIO, FORMAT
-from .utils import count_files
 
 class AudioProcessing:
     def __init__(self) -> None:
@@ -22,6 +20,8 @@ class AudioProcessing:
         self.max_hz_audio_len = MAX_AUDIO_LEN * TARGET_RATE  #usato per fare il padding, misura lunghezza audio in hz
         self.target_shape = (N_MELS_BAND, N_MELS_BAND) # for resize to shape for CNN 128x128
         self.overlap_ratio = OVERLAP_RATIO
+        self.img_width = 224
+        self.img_height = 224
       
     def to_wav_chunk(self, file_path: str, label: str, chunk_length_ms=1000):
         """
@@ -40,25 +40,6 @@ class AudioProcessing:
         chunks = make_chunks(audio, chunk_length_ms)
         for i, chunk in enumerate(chunks):
             chunk.export(f"data/speech/audio/{label}/{file_name}_{i}.wav", format="wav")
-        
-            '''if overlapping==True:
-                # Calculate the hop size (how much we shift each chunk)
-                hop_size_ms = chunk_length_ms - overlap_ms  # e.g., 1000 ms chunk, 500 ms overlap -> hop_size = 500 ms
-                
-                # Start slicing the audio into overlapping chunks
-                start = 0
-                chunk_id = 0  # Track chunk number for naming
-                
-                while start + chunk_length_ms <= len(audio):  # Ensure we don't exceed audio length
-                    # Get the chunk (from 'start' to 'start + chunk_length_ms')
-                    overlap_chunk = audio[start:start + chunk_length_ms]
-                    
-                    # Export chunk as a .wav file
-                    overlap_chunk.export(f"data/speech/audio/{label}/{file_name}_aug_overlap_{chunk_id}.wav", format="wav")
-                    
-                    # Move start to the next position (hop size)
-                    start += hop_size_ms
-                    chunk_id += 1'''
 
     def load_audio(self, audio_path):
         """
@@ -145,10 +126,11 @@ class AudioProcessing:
                 output_path = spec_label_folder / f'{file_name}.png'
             # Save the Mel spectrogram as an image
             plt.figure(figsize=(5,5))
+            plt.figure(figsize=(self.img_width / 100, self.img_height / 100))
             librosa.display.specshow(s_dB, sr=sr, hop_length=self.hop_length, x_axis='time', y_axis='mel', cmap='viridis')
             plt.axis('off')  # No axes for the image
             plt.tight_layout()
-            plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
+            plt.savefig(output_path, bbox_inches='tight', pad_inches=0, dpi=100)
             plt.close()
         
         return output_path
@@ -192,57 +174,3 @@ class AudioProcessing:
         mixed_audio = mixed_audio / np.max(np.abs(mixed_audio))
         
         return mixed_audio
-    
-    def augment_dataset(self, file_path, num_augmentations: int):
-        """
-        Augment the dataset by creating overlapped versions of audio files.
-        Maintains the label folder structure and augments within each label category.
-        
-        Usage: after creation wav 1 second audio from a long clip audio for increase the dataset sample
-        
-        Args:
-            input_folder: Root folder containing subfolders for each label
-            output_folder: Root folder where augmented files will be saved (maintaining label structure)
-            num_augmentations: Number of augmentations to create per label
-        """
-        count_files(file_path)
-        label_folders = [f for f in os.listdir(file_path) if os.path.isdir(os.path.join(file_path, f))]
-
-        for label in label_folders:
-            label_path = os.path.join(file_path, label)
-            
-            # Get all audio files for this label
-            audio_files = [f for f in os.listdir(label_path) if f.endswith('.wav')]
-            print(len(audio_files))
-            # Skip if there are less than 2 files in the label folder
-            if len(audio_files) < 2:
-                print(f"Skipping label {label}: Not enough files for augmentation")
-                continue
-                
-            for i in range(num_augmentations):
-                try:
-                    # Randomly select two audio files from the same label
-                    file1, file2 = np.random.choice(audio_files, size=2, replace=False)
-                    
-                    # Load audio files
-                    audio1, sr1 = self.load_audio(os.path.join(label_path, file1))
-                    audio2, sr2 = self.load_audio(os.path.join(label_path, file2))
-                    
-                    # Create overlapped audio
-                    mixed_audio = self.gen_overlapped_audio(audio1, audio2, self.overlap_ratio)
-                    
-                    # Generate output filename (including label information)
-                    output_filename = f"{file1.split('.')[0]}_{file2.split('.')[0]}_augmented_{i}.wav"
-                    
-                    # Save the mixed audio
-                    wavfile.write(
-                        os.path.join(label_path, output_filename),
-                        self.target_rate,
-                        (mixed_audio * 32767).astype(np.int16)
-                    )
-                    
-                    print(f"Created augmentation {i+1}/{num_augmentations} for label {label}")
-                    
-                except Exception as e:
-                    print(f"Error processing augmentation {i} for label {label}: {str(e)}")
-                    continue

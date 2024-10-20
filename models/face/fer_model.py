@@ -1,28 +1,16 @@
-import pandas as pd
-import tensorflow as tf
-from keras.api.models import Sequential
 from keras.api.layers import (
-    Input, Conv2D, MaxPooling2D, MaxPool2D, Flatten, Dense, Dropout, RandomRotation, RandomZoom, RandomFlip,
-    Rescaling, SeparableConv2D, BatchNormalization, Activation, GlobalAveragePooling2D, AveragePooling2D,
-    Resizing, RandomTranslation, RandomBrightness, RandomContrast)
+    Input, Conv2D, MaxPooling2D, Flatten, Dense, Dropout,
+     SeparableConv2D, BatchNormalization, Activation, GlobalAveragePooling2D)
 from keras.api.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from keras.api.regularizers import l2
-from keras.api.optimizers import Adam
-from keras.api.utils import image_dataset_from_directory
 import matplotlib.pyplot as plt
 from keras import layers
 from keras.api.models import Model
-from keras._tf_keras.keras.preprocessing.image import ImageDataGenerator
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
 import numpy as np
-import zipfile
-from keras.api.models import load_model
-from keras.api.applications import VGG16
-from sklearn.preprocessing import LabelBinarizer
-from keras.api.utils import to_categorical
 from keras.api.applications import ResNet50V2
-from config import LABELS, NUM_LABELS
+from config import NUM_LABELS
 from preprocessing.utils import unzip
 from preprocessing.face_processing import preprocess_face_dataset
 
