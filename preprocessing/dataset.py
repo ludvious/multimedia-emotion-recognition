@@ -1,56 +1,22 @@
-from preprocessing.face_processing import process_and_augmentation_face_data, process_split_face_data, get_landmarks_from_image, preprocess_landmarks
+from preprocessing.face_processing import preprocess_face_dataset, get_landmarks_from_image, preprocess_landmarks
 from preprocessing.audio_processing import AudioProcessing
 from keras._tf_keras.keras.preprocessing.image import ImageDataGenerator
-from keras._tf_keras.keras.preprocessing import image_dataset_from_directory
 import numpy as np
 from pathlib import Path
-import cv2, os
-from config import N_MELS_BAND
+from utils import count_files
+import os
+from scipy.io import wavfile
 
-def create_face_dataset(data_path: str, input_shape, batch_size):
+def create_img_dataset(data_path: str, input_shape, batch_size):
 
-    train_datagen, validation_datagen, test_datagen = process_and_augmentation_face_data()
-    train_gen, val_gen, test_gen = process_split_face_data(data_path, train_datagen, validation_datagen, input_shape, batch_size)
+    train_gen, val_gen, test_gen = preprocess_face_dataset(data_path, input_shape, batch_size)
 
-    return train_gen, val_gen
+    return train_gen, val_gen, test_gen
 
-def load_features_and_labels(data_path, landmark_detector, landmark_predictor, output_folder='data/face_landmarks/'):
-    '''
-    method for create features and labels with landmarks from face data path
-    '''
-    features = []
-    labels = []
-    emotion_folders = [f for f in os.listdir(data_path) if os.path.isdir(os.path.join(data_path, f))]
     
-    for folder_index, folder in enumerate(emotion_folders):
-        folder_dir = os.path.join(data_path, folder)
-        if os.path.isdir(folder_dir):
-            for emotion in os.listdir(folder_dir):
-                emotion_dir = os.path.join(folder_dir, emotion)
-                for file_path in os.listdir(emotion_dir):
-                    image_path = os.path.join(emotion_dir, file_path)
-                    face_landmarks = get_landmarks_from_image(image_path, landmark_detector, landmark_predictor)
-                    processed_landmarks = preprocess_landmarks(face_landmarks)
-                    if processed_landmarks is not None:
-                        features.append(processed_landmarks)
-                        labels.append(emotion)
-                print(f"Processed {len(features)} features for emotion: {emotion}")
-    # Save the processed data
-    # Convert to numpy arrays
-    X = np.array(features)
-    y = np.array(labels)
-
-    np.save(os.path.join(output_folder, 'X_landmarks.npy'), X)
-    np.save(os.path.join(output_folder, 'y_labels.npy'), y)
-
-    print(f"Processed data saved to {output_folder}")
-    print(f"X shape: {X.shape}, y shape: {y.shape}")
-
-    return X, y
-    
-def create_audio_dataset(audio_file_path: str):
+def create_audio_spectrogram_dataset(audio_file_path: str):
         """
-        Load all audio wav files from folders, extract features, and return the dataset with features and labels.
+        Load all audio wav files from folders, extract features(spectrograms), and return the dataset with features and labels.
 
         Returns:
             np.array: Features and corresponding labels.
@@ -77,6 +43,61 @@ def create_audio_dataset(audio_file_path: str):
                         print(f"Error processing {file_path}: {e}")
         
         return np.array(X), np.array(Y)
+
+def augment_audio_dataset(file_path, num_augmentations: int):
+        """
+        Augment the audio dataset by creating overlapped versions of audio files.
+        Maintains the label folder structure and augments within each label category.
+        
+        Usage: after creation wav 1 second audio from a long clip audio for increase the dataset sample
+        
+        Args:
+            input_folder: Root folder containing subfolders for each label
+            output_folder: Root folder where augmented files will be saved (maintaining label structure)
+            num_augmentations: Number of augmentations to create per label
+        """
+        audio_proc = AudioProcessing()
+        count_files(file_path)
+        label_folders = [f for f in os.listdir(file_path) if os.path.isdir(os.path.join(file_path, f))]
+
+        for label in label_folders:
+            label_path = os.path.join(file_path, label)
+            
+            # Get all audio files for this label
+            audio_files = [f for f in os.listdir(label_path) if f.endswith('.wav')]
+            print(len(audio_files))
+            # Skip if there are less than 2 files in the label folder
+            if len(audio_files) < 2:
+                print(f"Skipping label {label}: Not enough files for augmentation")
+                continue
+                
+            for i in range(num_augmentations):
+                try:
+                    # Randomly select two audio files from the same label
+                    file1, file2 = np.random.choice(audio_files, size=2, replace=False)
+                    
+                    # Load audio files
+                    audio1, sr1 = audio_proc.load_audio(os.path.join(label_path, file1))
+                    audio2, sr2 = audio_proc.load_audio(os.path.join(label_path, file2))
+                    
+                    # Create overlapped audio
+                    mixed_audio = audio_proc.gen_overlapped_audio(audio1, audio2, audio_proc.overlap_ratio)
+                    
+                    # Generate output filename (including label information)
+                    output_filename = f"{file1.split('.')[0]}_{file2.split('.')[0]}_augmented_{i}.wav"
+                    
+                    # Save the mixed audio
+                    wavfile.write(
+                        os.path.join(label_path, output_filename),
+                        audio_proc.target_rate,
+                        (mixed_audio * 32767).astype(np.int16)
+                    )
+                    
+                    print(f"Created augmentation {i+1}/{num_augmentations} for label {label}")
+                    
+                except Exception as e:
+                    print(f"Error processing augmentation {i} for label {label}: {str(e)}")
+                    continue
 
 def process_audio_data_generator(data_path, batch_size, input_shape):
 
@@ -113,13 +134,3 @@ def process_audio_data_generator(data_path, batch_size, input_shape):
         )
 
         return train_generator, val_generator
-
-
-# Load train and test features
-'''train_dir = "/content/train"
-val_dir = "/content/test"
-train_features, train_labels = load_features_and_labels(train_dir)
-val_features, val_labels = load_features_and_labels(val_dir)'''
-
-#train_landmark = get_face_landmarks(train_features)
-#val_landmark = get_face_landmarks(val_features)
