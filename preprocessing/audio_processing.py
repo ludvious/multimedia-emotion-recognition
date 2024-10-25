@@ -23,17 +23,14 @@ class AudioProcessing:
         self.img_width = 224
         self.img_height = 224
       
-    def to_wav_chunk(self, file_path: str, label: str, chunk_length_ms=1000):
+    def gen_chunks(self, file_path: str, label: str, chunk_length_ms=1000):
         """
-        Split audio downloaded in chunks and augment with overlapping chunks and save each chunk as a .wav file.
+        Split audio downloaded in chunks, save them as a .wav file.
         
         :param file_path: Path to the input audio file.
         :param label: Label for the output directory.
-        :pram overlapping: bool True or False according to apply overlapping
         :param chunk_length_ms: Length of each chunk in milliseconds (default 1000 ms).
-        :param overlap_ms: Amount of overlap between chunks in milliseconds (default 500 ms).
         """
-        # Load the audio file
         file = Path(file_path)
         file_name = file.stem
         audio = AudioSegment.from_file(file)
@@ -73,7 +70,7 @@ class AudioProcessing:
 
         return audio, sr
     
-    def get_spectrogram(self, audio_data):
+    def get_mel_spectrogram(self, audio_data):
         """
         Extract Mel spectrogram as feature from audio data.
         Returns: np.ndarray: Mel spectrogram.
@@ -115,7 +112,7 @@ class AudioProcessing:
         y, sr = self.load_audio(audio_file_path)
         file_name = os.path.splitext(os.path.basename(audio_path))[0] # pick the same name file
         # Genera lo spettrogramma
-        s_dB = self.get_spectrogram(audio_data=y)
+        s_dB = self.get_mel_spectrogram(audio_data=y)
         if save_img:
             # Salva lo spettrogramma come immagine nel path specifico; caso di run dell app oppure caso in cui genero il dataset per il training
             if inference==True:
