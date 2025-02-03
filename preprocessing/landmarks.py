@@ -4,7 +4,7 @@ from preprocessing.face_processing import get_landmarks_from_image, preprocess_l
 
 def load_landmarks_and_labels(data_path, landmark_detector, landmark_predictor, output_folder='data/face_landmarks/'):
     '''
-    method for create features and labels with landmarks from face data path
+    metodo per estrarre le landmarks(features) e labels dalla cartella degli audio
     '''
     features = []
     labels = []

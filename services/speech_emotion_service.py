@@ -36,7 +36,7 @@ class SpeechEmotionService:
         wav.close()
     
     def preprocess_audio(self, audio_path):
-        """load and preprocess the audio for testing the model
+        """carica e pre-processa gli audio per il modello
 
         Args:
             audio_path (str): _description_
@@ -60,6 +60,14 @@ class SpeechEmotionService:
         return input_tensor
     
     def preprocess_audio_edit(self, audio_path, spec_output_folder):
+        """carica e pre-processa gli audio per il modello
+
+        Args:
+            audio_path (str): _description_
+
+        Returns:
+            _type_: spectrogram with correct tensor shape
+        """
 
         spec_img_path = self.audio_preproc.audio_to_spectrogram_img(audio_path, inference=True, inference_ouput_folder=spec_output_folder)
         img = load_img(spec_img_path, target_size=(128, 128))

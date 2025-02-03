@@ -16,7 +16,8 @@ def create_img_dataset(data_path: str, input_shape, batch_size):
     
 def create_audio_spectrogram_dataset(audio_file_path: str):
         """
-        Load all audio wav files from folders, extract features(spectrograms), and return the dataset with features and labels.
+        Carica tutti i file audio wav dalle cartelle, estrae le features (spettrogrammi)
+        e restituisce il set di dati con caratteristiche ed etichette.
 
         Returns:
             np.array: Features and corresponding labels.
@@ -46,10 +47,10 @@ def create_audio_spectrogram_dataset(audio_file_path: str):
 
 def augment_audio_dataset(file_path, num_augmentations: int):
         """
-        Augment the audio dataset by creating overlapped versions of audio files.
-        Maintains the label folder structure and augments within each label category.
+        Aumenta il set di dati audio creando versioni sovrapposte di file audio.
+        Mantiene la struttura della cartella delle etichette e aumenta all'interno di ogni categoria di etichette.
         
-        Usage: after creation wav 1 second audio from a long clip audio for increase the dataset sample
+        Uso: dopo la creazione di audio wav di 1 secondo da una clip audio lunga per aumentare il campione del set di dati
         
         Args:
             input_folder: Root folder containing subfolders for each label

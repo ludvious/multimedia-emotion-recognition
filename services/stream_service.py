@@ -27,6 +27,9 @@ class StreamService:
         print('start chunk')
         
     def save_chunk(self):
+        '''salvo chunk lungo un secondo e prende per quella finestra l audio e i frame video catturati
+        e faccio la prediction
+        '''
         if not self.frame_buffer or not self.audio_buffer or not self.emotion_buffer:
             return
             

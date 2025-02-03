@@ -2,6 +2,7 @@ import os, librosa
 from librosa.util import fix_length
 import numpy as np
 from pathlib import Path
+from PIL import Image
 import matplotlib
 import matplotlib.pyplot as plt
 from pydub import AudioSegment
@@ -25,7 +26,7 @@ class AudioProcessing:
       
     def gen_chunks(self, file_path: str, label: str, chunk_length_ms=1000):
         """
-        Split audio downloaded in chunks, save them as a .wav file.
+        split degli audio in chunks e esportati in wav format
         
         :param file_path: Path to the input audio file.
         :param label: Label for the output directory.
@@ -40,7 +41,7 @@ class AudioProcessing:
 
     def load_audio(self, audio_path):
         """
-        Load and preprocess audio file: applying resampling and pad/trunc to normalize all audio
+        Carica e preelaborare il file audio: applicare il ricampionamento e il pad/trunc per normalizzare tutto l'audio.
         
         Args:
             file_path (str): Path to an audio file.
@@ -122,6 +123,8 @@ class AudioProcessing:
             else:
                 output_path = spec_label_folder / f'{file_name}.png'
             # Save the Mel spectrogram as an image
+            #TODO modificare qui e salvare spectrgorammi come 128x4 (dimensione orignale)
+            
             plt.figure(figsize=(5,5))
             plt.figure(figsize=(self.img_width / 100, self.img_height / 100))
             librosa.display.specshow(s_dB, sr=sr, hop_length=self.hop_length, x_axis='time', y_axis='mel', cmap='viridis')
@@ -156,8 +159,7 @@ class AudioProcessing:
     
     def gen_overlapped_audio(self, audio1, audio2, overlap_ratio=0.5):
         """
-        Create an overlapped audio by mixing two audio samples
-        overlap_ratio: Amount of overlap between the two audio samples (0 to 1)
+        crea audio con tecnica overlapping tramite l uso di due audio e un overlap di 0.5
         """
         # Make sure both audios have the same length
         min_length = min(len(audio1), len(audio2))

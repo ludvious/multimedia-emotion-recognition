@@ -22,7 +22,6 @@ def count_files(file_path):
 def plot_spec(audio_data, sr, name):
     """stampa a video lo spettogramma e lo salva come immagine
     """
-
     spec = librosa.feature.melspectrogram(y=audio_data, sr=sr, n_mels=128)
     spec_db = librosa.amplitude_to_db(spec, ref=np.max)
 
