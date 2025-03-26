@@ -9,7 +9,6 @@ import cv2, pyaudio, os
 from datetime import datetime
 import numpy as np
 from config import FPS, CHANNELS, FORMAT, CHUNK, SAMPLING_RATE, FACE_MODEL_PATH, SPEECH_MODEL_PATH
-import shutil
 
 
 app = Flask(__name__, template_folder='templates')
@@ -27,7 +26,7 @@ speech_service = SpeechEmotionService(model_path=SPEECH_MODEL_PATH)
 def get_camera():
     global camera
     if camera is None:
-        camera = cv2.VideoCapture(1)
+        camera = cv2.VideoCapture(0)
         camera.set(cv2.CAP_PROP_FPS, FPS)
     return camera
 
