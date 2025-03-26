@@ -8,7 +8,7 @@ from flask import Flask, render_template, Response, jsonify
 import cv2, pyaudio, os
 from datetime import datetime
 import numpy as np
-from config import FPS, CHANNELS, FORMAT, CHUNK, SAMPLING_RATE
+from config import FPS, CHANNELS, FORMAT, CHUNK, SAMPLING_RATE, FACE_MODEL_PATH, SPEECH_MODEL_PATH
 import shutil
 
 
@@ -21,8 +21,8 @@ audio_stream = None
 p_audio = None
 recorder = None
 
-face_service = FaceEmotionService(model_path='models/face/resnet50_checkpoint.model.keras')
-speech_service = SpeechEmotionService(model_path='models/speech/audio_modelcheckpoint.model_t4.keras')
+face_service = FaceEmotionService(model_path=FACE_MODEL_PATH)
+speech_service = SpeechEmotionService(model_path=SPEECH_MODEL_PATH)
 
 def get_camera():
     global camera

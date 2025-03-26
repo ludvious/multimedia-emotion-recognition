@@ -47,7 +47,7 @@ class SpeechEmotionService:
         target_shape = (self.n_mels, self.n_mels)
 
         fix_audio, sr = self.audio_preproc.load_audio(audio_path=audio_path)
-        mel_spectrogram = self.audio_preproc.get_spectrogram(fix_audio)
+        mel_spectrogram = self.audio_preproc.get_mel_spectrogram(fix_audio)
 
         # Resizing  dimension for CNN (height, width, channels) QUESTO DOVREBBE FUNZIONARE CE DA TESTARLO
         mel_spectrogram = np.expand_dims(mel_spectrogram, axis=-1)

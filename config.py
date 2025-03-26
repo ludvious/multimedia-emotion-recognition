@@ -5,6 +5,10 @@ LABELS_DICT = {0: 'Angry', 1: 'Disgust', 2: 'Fear', 3: 'Happy', 4: 'Sad', 5: 'Su
 NUM_LABELS = 7
 TF_ENABLE_ONEDNN_OPTS= os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
+# MODELS PATH
+FACE_MODEL_PATH = "models/face/resnet50_checkpoint.model.keras"
+SPEECH_MODEL_PATH = "models/speech/audio_modelcheckpoint.model_t4.keras"
+
 # AUDIO PARAMETERS
 
 TARGET_RATE = 22050 #rate for process audio

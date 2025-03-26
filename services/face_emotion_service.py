@@ -38,7 +38,7 @@ class FaceEmotionService:
                 perc = round((max(prediction)*100), 1)
                 print(f'Face emotion detected: {emotion} %{perc}')
                 cvtext = f'{emotion} %{perc}'
-                if perc > 55:
+                if perc > 51:
                     #cv2.putText(frame, cvtext, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
                     return emotion
                 else:
@@ -65,7 +65,7 @@ class FaceEmotionService:
                 perc = round((max(prediction)*100), 1)
                 print(f'Face emotion detected: {emotion} %{perc}')
                 cvtext = f'{emotion} %{perc}'
-                if perc > 55:
+                if perc > 51:
                     #cv2.putText(frame, cvtext, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
                     return emotion
                 else:
