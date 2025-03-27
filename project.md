@@ -1,32 +1,23 @@
 # Documentazione
 
 ## Table of Contents
-### 1. [Introduction](#1-introduction)
-### 2. [App Description](#2-app-description)
-### 3. [Installation and Setup](#3-installation-and-setup)
-### 4. [How Use Application](#4-how-use-application)
-### 5. [Project Structure](#5-project-structure)
-### 6. [Datasets](#6-datasets)
-### 7. [Models](#7-models)
-### 8. [Evaluation & Testing](#8-evaluation--testing)
-### 9. [Conclusion](#9-conclusion)
+### Introductione
+### Installation and Setup
+### Datasets
+### Conclusioni
+### Vantaggi di Applicazioni Multimodale e Casi D'uso
 
-## 1. Introduzione
+## Introduzione
 L'affective computing, lo studio e lo sviluppo di sistemi in grado di riconoscere, interpretare e simulare le emozioni umane, è diventato un campo in rapida evoluzione nell'intelligenza artificiale e nell'interazione uomo-computer. Il crescente interesse nello sviluppo di un'applicazione di riconoscimento delle emozioni multimodale deriva dalla crescente domanda di macchine in grado di comprendere le emozioni in tempo reale in vari contesti del mondo reale. Sfruttando la combinazione di espressioni facciali e modelli di linguaggio, questo progetto mira a migliorare le capacità dei sistemi di riconoscimento delle emozioni. Le emozioni umane sono complesse e possono essere espresse attraverso più canali, rendendo gli approcci multimodali cruciali per catturare le sfumature degli stati emotivi.
-
 Rilevare le emozioni in tempo reale attraverso espressioni facciali e linguaggio è particolarmente affascinante perché queste modalità forniscono informazioni complementari. Le espressioni facciali sono spesso l'indizio visivo più immediato di come si sente una persona, mentre il linguaggio può rivelare sottigliezze di tono, tono e ritmo che le espressioni facciali da sole potrebbero non trasmettere. L'integrazione di queste due modalità consente un rilevamento delle emozioni più accurato e completo, che può essere cruciale nelle applicazioni del mondo reale, come il miglioramento dell'interazione uomo-computer, il miglioramento degli assistenti virtuali o il supporto delle valutazioni della salute mentale.
-
 Il riconoscimento multimodale delle emozioni è una branca dell’affective computing che combina diverse modalità di input (come espressioni facciali, linguaggio, tono di voce, gesti e segnali fisiologici) per identificare in modo più accurato lo stato emotivo di una persona.
 A differenza dei sistemi tradizionali, che si basano su un'unica fonte di dati (es. solo il volto o solo il testo), l’approccio multimodale integra più canali comunicativi, migliorando l’affidabilità e la profondità dell’analisi emotiva.
-
 Da un punto di vista scientifico, il riconoscimento multimodale delle emozioni ha un potenziale significativo. Contribuisce all'obiettivo più ampio di creare sistemi intelligenti in grado di comprendere e rispondere alle emozioni umane, il che può rivoluzionare campi come l'assistenza sanitaria, l'istruzione e l'intrattenimento. Inoltre, arricchisce il discorso scientifico nell'affective computing offrendo nuove intuizioni su come diversi canali di dati possono lavorare insieme per migliorare i sistemi di rilevamento delle emozioni, spingendo così i confini della tecnologia attuale.
 
-## 2. App Description
-
-## 3. Installation and Setup
+## Installation and Setup
 Per l'installazione e setup fare riferimento a [README.md](/README.md)
 
-## 6. Datasets
+## Datasets
 #### Face Emotion Recognition Dataset
 Per il modello adibito al riconiscemento delle emozioni da espressioni facciali, si é optato per il dataset piú utilizzato in ambito dell emotion recognition, il **Fer2013**, un dataset giá ben testato e di buona performance formato da circa 35k immagini di espressioni facciali suddivisi in train e test set.
 I dati sono costituiti da immagini in scala di grigi di volti di 48x48 pixel. I volti sono stati registrati automaticamente in modo che il viso sia più o meno centrato e occupi circa la stessa quantità di spazio in ogni immagine.
@@ -40,7 +31,7 @@ Questo approccio oltre che aumentare gli esempi per il modello, crea nuovi audio
 Il dataset effettivo per il modello e' stato ottenuto **convertendo gli audio in spectrogrammi**(di scal Mel); la collezione di questi spectrogrammi sotto forma di immagini, dopo alcuni step di pre-elaborazione, sono stati gli input di modello di deep learning basano su reti neurali di convoluzione.
 (**CNN**).
 
-## 9. Conclusion
+## Conclusioni
 
 Sviluppare un sistema di riconoscimento delle emozioni multimodale offre un'opportunità preziosa per applicare concetti teorici a problemi concreti. Difatti integrare conoscenze di diversi ambiti, come l'apprendimento automatico, la visione artificiale, l'elaborazione della voce e del linguaggio, permettono di analizzare in maniera piú profonda il riconoscimento delle emozioni.
 
@@ -52,7 +43,7 @@ Difatti lo sviluppo di questo tipi di applicativi é risultato come una incoragg
 Inoltre é una rilevante e valida introduzione non solo nel affrontare sfide future di ricerca riguardo all affective computing, ma in generale nei progetti scientifici e industriali dell ambito del Computer Vision.
 Gli attuali progressi che oggigiorno portano alla continua pubblicazione di nuovi modelli, applicazione, frameworks, incoraggia sempre di piú la ricerca alla continua innovazione nell ambito dell intelligenza artificiale, mirando a contribuire allo sviluppo di sistemi sempre piú intelligenti in vasti campi di applicazione della la medicina come la riabilitazione, l healtcare; campi educativi come la didattica, o ambito sviluppo software relativo alla sicurezza e molti altri.
 
-## 10. Vantaggi di Applicazioni Multimodale e Casi D'uso
+## Vantaggi di Applicazioni Multimodale e Casi D'uso
 Il riconoscimento emotivo multimodale in tempo reale è cruciale perché permette alle macchine di interagire in modo dinamico e contestuale con gli esseri umani, adattandosi alle loro emozioni mentre accadono. Questo è fondamentale per:
 - Migliorare l’interazione uomo-macchina
 - Modificare il comportamento in base all’umore dell’utente (es. un chatbot che diventa più paziente se rileva frustrazione).
